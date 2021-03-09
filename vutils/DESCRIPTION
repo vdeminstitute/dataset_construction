@@ -1,0 +1,24 @@
+Package: vutils
+Type: Package
+Title: V-Dem Helper Functions
+Version: 11.0
+Date: 2021-03-06
+Authors@R: c(person("Joshua", "Krusell", role = "aut",
+                    comment = "Original creator and author"),
+             person("Johannes", "von Römer", email = "johannes.roemer@v-dem.net", 
+                    role = c("aut"), comment = "Author and current maintainer"),
+             person("Nina", "Ilchenko", email = "nina.ilchenko@v-dem.net", 
+                    role = c("aut"), comment = "Author"),
+             person("Marcus", "Tannenberg", role = "ctb", comment = "unit tests"),
+             person("V-Dem Institute", role = c("cph", "fnd")))
+Encoding: UTF-8
+ByteCompile: true
+Repository: aloha
+Description: Internal package for organizing Rcpp/R functions used in
+             the V-Dem DS construction process.
+Depends: R (>= 4.0.3)
+License: GPL (>= 2) | file LICENSE
+Imports: Rcpp (>= 0.12.15), coda, tools, magrittr, methods, parallel, dplyr, utils, stats, RCurl, crayon, data.table
+Suggests: openxlsx, readstata13, DBI, RPostgreSQL, haven, testthat, readxl, stringr
+LinkingTo: Rcpp
+RoxygenNote: 7.1.1
