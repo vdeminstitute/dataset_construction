@@ -1,8 +1,6 @@
 #!/usr/bin/env Rscript
 
 # ==========================================================================
-# Create recoded variables
-# ==========================================================================
 options(warn = 2)
 suppressMessages(library(dbplyr))
 suppressMessages(library(dplyr))
@@ -61,6 +59,7 @@ if (no_test()) {
     info("Create recoded variable versions for " %^% VARNAME)
 } else {
 # Call unit tests for main function and sub functions
-    testthat::test_file("~/proj/mm-prep/tests/init/test_recoded.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_recoded.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

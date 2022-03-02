@@ -35,7 +35,6 @@ remove_historical_na <- function(df, VARNAME) {
 merge_country_unit <- function(df, country_unit) {
     # Clean Dates by utable (some exceptions may apply)
     # Note: Except left side for v3 A, A*, B variables.
-    #       These will be cleaned after later.
     return(left_join_(df, select(country_unit, -historical_date), 
         by = c("country_id", "year")))
 }
@@ -188,7 +187,6 @@ mecenefi_cleaning <- function(df, VARNAME) {
 
 percent_multiply <- function(df) {
 
-    # mutliply with 100.
     df %>% 
         mutate(code = ifelse(
             name %in% c("v2msuffrage", "v2fsuffrage", "v2asuffrage"),
@@ -254,6 +252,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = T)    
     info("Done with clean_all")
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/init/test_clean_all.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_clean_all.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

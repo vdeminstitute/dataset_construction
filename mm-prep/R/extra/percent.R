@@ -1,12 +1,6 @@
 #!/usr/bin/env Rscript
 
-# ==========================================================================
-# percent.R: bootstrap reduced percent vars
-#
-# Percentage variables are aggregated by simply bootstrapping, mostly
-# because we're not comfortable assuming uniform directionality, which
-# precludes running these vars in the MM.
-# ==========================================================================
+#==========================================================
 
 options(warn = 2)
 
@@ -52,6 +46,7 @@ invert_v2clsnlpct <- function(ma, VARNAME) {
     }
     return(ma)
 }
+
 
 point_estimates <- function(ll) {
     # Create the point estimate for the DS

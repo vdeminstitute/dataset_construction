@@ -211,6 +211,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = T)    
     info("Done with cont_hist_merge...")
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/downstream_cleaning/test_cont_hist_merge.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_cont_hist_merge.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

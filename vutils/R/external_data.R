@@ -14,13 +14,13 @@
 #' \dontrun{guess_source_by_file_name(list.files("~/Documents/edata/2021/upd", full.names = TRUE))}
 #'
 #' @export
-guess_source_by_file_name <- function(file_name = "bnr") {
+guess_source_by_file_name <- function(file_name = "area") {
 	file_name <- basename(file_name)
 	source <- dplyr::case_when(
 		# download Haber & Menaldo data twice
 		# for one of them assign a slightly different name
-		grepl("APSR_nonupd", file_name) ~ "habmen",
-		grepl("Haber", file_name) ~ "area",
+		grepl("Haber", file_name) ~ "habmen",
+		grepl("area", file_name) ~ "area",
 		grepl("ddrevisited", file_name) ~ "cheibub",
 		grepl("sp_dyn|life_expectancy|infant_mortality_rate|maternal_mortality", file_name) ~ "gapminder",
 		grepl("EducationalIn", file_name) ~ "peedgini",
@@ -35,99 +35,124 @@ guess_source_by_file_name <- function(file_name = "bnr") {
 		grepl("FinalCHAT", file_name) ~ "radio",
 		grepl("National_COW", file_name) ~ "cowec",
 		grepl("democracy-v\\d", file_name) ~ "boix",
-		grepl("mpd\\d{4}", file_name) ~ "gdp",
-		grepl("CPI\\d{4}", file_name) ~ "ti",
-		file_name == "bnr" ~ "bnr",
+		grepl("estimates_all_long_\\d{6}.rds$", file_name) ~ "gdppop",
+		grepl("CPI\\d{4}", file_name) ~ "ti_cpi",
+		grepl("qog", file_name) ~ "bnr",
+		file_name == "wb_pop" ~ "wb_pop",
 		TRUE ~ NA_character_
 		)
 	return(source)
 }
 
 choose_mtable <- function(data_key) {
-	func_name <- switch(data_key, "area" = "cow",
-		"cheibub" = "cow",
-		"gapminder" = "cow",
-		"peedgini" = "iso",
-		"pt_coup" = "cow",
-		"lexical_index" = "cow",
-		"wbgi" = "iso",
-		"fh" = "all_df",
-		"polity" = "cow",
-		"ti_cpi" = "iso",
-		"clio" = "iso",
-		"uds" = "cow",
-		"radio" = "all_df",
-		"habmen" = "cow",
-		"cowec" = "cow",
+	func_name <- switch(data_key,
+		"area" = "cow",
 		"boix" = "cow",
-		"gdp" = "iso",
-		"bnr" = "cow",
-		"ti" = "iso",
+		"cheibub" = "cow",
+		"cowec" = "cow",
+		"gapminder" = "cow",
+		"habmen" = "cow",
+		"lexical_index" = "cow",
+		"polity" = "cow",		
+		"pt_coup" = "cow",
+		"uds" = "cow",
+		"bnr" = "iso",
+		"clio" = "iso",
+		"peedgini" = "iso",
+		"ti_cpi" = "iso",
+		"wbgi" = "iso",
+		"wb_pop" = "iso",
+		"gdppop" = "gw",
+		"radio" = "all_df",
+		"fh" = "all_df",
 		"przeworski" = "mtable_list")
 	return(func_name)
 }
 
-area <- function(file_name, mtable, country_unit) {
-	cshapes <- cshapes::cshp() %>%
-		as.data.frame() %>%
-		dplyr::select(CNTRY_NAME, AREA, COWCODE, GWSYEAR, GWEYEAR) %>%
-		setNames(c("country_name", "e_area", "cow_ccode", "start_year", "end_year")) %>%
-		dplyr::filter(start_year != -1 | end_year != -1, cow_ccode != -1) %>%
-		dplyr::mutate(end_year = dplyr::case_when(
-			end_year == 2016 ~ 2018,
-			TRUE ~ as.numeric(end_year)
-		)) %>%
-		dplyr::arrange(cow_ccode, start_year)
+area <- function(file_name, mtable) {
+	stopifnot(c("cshapes", "sf") %in% rownames(installed.packages(lib.loc = .libPaths()[1])))
+	stopifnot(packageVersion("cshapes") == "2.0")
 
-	cshp_long <- lapply(1:nrow(cshapes), function(row_count) {
+	df <- cshapes::cshp(useGW = FALSE, dependencies = TRUE)
+	df <- dplyr::mutate(df, area = sf::st_area(df))
 
-		# remove duplicates in end_year[row_count] and start_year[row_count + 1]
-		cshapes$end_year[row_count] <- ifelse(cshapes$end_year[row_count] == c(cshapes$start_year, 9999)[row_count + 1],
-			cshapes$end_year[row_count] - 1,
-			cshapes$end_year[row_count])
+	df <- sf::st_drop_geometry(df) %>%
+		dplyr::select(cowcode, country_name, start, end, status, owner, area) %>%
+		dplyr::mutate(start_year = to_year(start), end_year = to_year(end)) %>%
+		dplyr::arrange(cowcode, start)
 
-		year <- cshapes$start_year[row_count]:cshapes$end_year[row_count]
-		country_name <- rep(cshapes$country_name[row_count], length(year)) %>%
-			as.character()
-		e_area <- rep(cshapes$e_area[row_count], length(year))
-		ccode <- rep(cshapes$cow_ccode[row_count], length(year))
+	df_long <- lapply(seq_along(rownames(df)), function(row) {
 
-		df <- data.frame(ccode, country_name, year, e_area)
-		return(df)
-	}) %>% 
+		year <- with(df, start_year[row] : end_year[row])
+
+		repl <- function(x, y) {rep(x, length(y))}
+
+		out_df <- data.frame(
+			ccode = with(df, repl(cowcode[row], year)),
+			country_name = with(df, repl(country_name[row], year)),
+			year = year,
+			start_date = with(df, repl(start[row], year)),
+			end_date = with(df, repl(end[row], year)),
+			area = with(df, repl(area[row], year)),
+			stringsAsFactors = FALSE
+			)
+		return(out_df)
+	}) %>%
 		dplyr::bind_rows() %>%
-		dplyr::arrange(ccode, year) %>%
-		dplyr::inner_join(mtable[,c("ccode", "country_id", "year")], by = c("ccode", "year")) %>%
-		dplyr::select(country_id, year, everything())
+		dplyr::group_by(ccode, year) %>%
+		dplyr::arrange(end_date) %>%
+		dplyr::filter(dplyr::row_number() == dplyr::n()) %>%
+		dplyr::mutate(e_area = as.numeric(area)) %>%
+		dplyr::ungroup()
 
-	# exclude the observations we already have thanks to the package cshapes
-	area_skelet <- country_unit %>%
-		dplyr::arrange(country_id, year) %>%
-		dplyr::anti_join(cshp_long, by = c("country_id", "year"))
+	df_rec <- dplyr::mutate(df_long, ccode = dplyr::case_when(
+		ccode == 255 & year == 1990 ~ 260,
+		ccode == 901 ~ 900,
+		ccode == 911 & year < 1949 ~ 910,
+		ccode == 912 & year < 1949 ~ 910,
+		ccode == 5518 & year < 1911 ~ 551,
+		ccode == 822 & year < 1946 ~ 820,
+		ccode == 821 & year < 1946 ~ 820,
+		ccode == 7020 ~ 704,
+		ccode == 521 & year < 1960 ~ 139,
+		ccode == 5200 & year < 1960 ~ 139,
+		ccode == 827 & year < 1946 ~ 830,
+		ccode == 21 & dplyr::between(year, 1907, 1919) ~ 20,
+		ccode == 732 & dplyr::between(year, 1945, 1947) ~ 730,
+		ccode == 7506 & year > 1947 ~ 750,
+		ccode == 681 & year < 1962~ 680,
+		ccode == 6801 & year < 1967 ~ 680,
+		ccode == 678 & year == 1990 ~ 679,
+		ccode == 460 & year < 1922 ~ 461,
+		ccode == 815 & year < 1954 ~ 817,
+		ccode == 7351 & dplyr::between(year, 1905, 1919) ~ 740,
+		TRUE ~ as.numeric(ccode)
+	)) %>%
+		dplyr::group_by(ccode, year) %>%
+		dplyr::summarize(e_area = sum(e_area, na.rm = TRUE)) %>%
+		dplyr::ungroup()
 
-	habmen <- read_file(file_name, sheet = 2) %>%
-		dplyr::select(hmccode, cnamehabmen, year, area) %>%
-		setNames(c("ccode", "country_name", "year", "e_area")) %>%
-		dplyr::filter(!is.na(e_area)) %>%
-		dplyr::mutate(ccode = dplyr::case_when(
-			ccode == 255 & dplyr::between(year, 1948, 1990) ~ 260,
-			ccode == 316 & year == 1992 ~ 315,
-			ccode == 347 ~ 345,
-			ccode == 679 & dplyr::between(year, 1985, 1989) ~ 678,
-			ccode == 818 ~ 816,	
+	ru_df <- lapply(c(516, 517), function(cid) {
+		dplyr::filter(df_long, ccode == 515, year < 1962) %>%
+		dplyr::mutate(ccode = cid, e_area = as.numeric(e_area)) %>%
+		dplyr::select(ccode, year, e_area)
+	}) %>% dplyr::bind_rows()
+
+	df_rec %<>% dplyr::bind_rows(ru_df)
+
+	palestine_df <- dplyr::filter(df_rec, ccode %in% c(665, 6511)) %>%
+		dplyr::mutate(country_id = dplyr::case_when(
+			ccode == 665 ~ 209,
+			ccode == 6511 ~ 138,
 			TRUE ~ as.numeric(ccode)
-		)) %>%
-		dplyr::arrange(ccode, year) %>%
-		dplyr::inner_join(mtable[,c("ccode", "country_id", "year")], by = c("ccode", "year")) %>%
-		dplyr::select(country_id, year, everything()) %>%
-		dplyr::semi_join(area_skelet, by = c("country_id", "year"))
+		)) %>% dplyr::select(country_id, year, dplyr::everything(), -ccode)
 
-	habmen_df <- dplyr::bind_rows(cshp_long, habmen) %>%
-		dplyr::arrange(country_id, year) %>%
-		dplyr::select(-ccode, -country_name) %>%
-		dplyr::distinct(country_id, year, .keep_all = TRUE)
+	area_df <- dplyr::inner_join(df_rec, mtable[, c("country_id", "ccode", "year")], by = c("ccode", "year")) %>%
+		dplyr::bind_rows(palestine_df) %>%
+		dplyr::mutate(e_area = round(e_area / 1000000, 3)) %>%
+		dplyr::select(-ccode)
 
-	return(habmen_df)
+	return(area_df)
 }
 
 cheibub <- function(file_name, mtable) {
@@ -203,8 +228,8 @@ peedgini <- function(file_name, mtable) {
 }
 
 pt_coup <- function(file_name, mtable) {
-	pothy_df <-	read.table(file_name, sep = "\t", header = TRUE,
-			stringsAsFactors = FALSE) %>%
+	pothy_df <-	suppressWarnings(read.table(file_name, sep = "\t", header = TRUE,
+			stringsAsFactors = FALSE)) %>%
 		dplyr::select(ccode, year, dplyr::starts_with("coup")) %>%
 		reshape2::melt(id.vars = c("ccode", "year"), variable.name = "coup_event", value.name = "e_pt_coup") %>%
 		dplyr::group_by(ccode, year) %>%
@@ -373,7 +398,7 @@ przeworski <- function(file_name, mtable_list) {
 		dplyr::inner_join(mtable[,c("ccode", "year", "country_id")], by = c("ccode", "year")) %>% 
 		dplyr::group_by(ccode, year) %>%
 		dplyr::filter(country_number == max(country_number)) %>%
-		dplyr::ungroup()
+		dplyr::ungroup
 	 
 	przew2 <- przew_nona %>%
 		dplyr::mutate(country_name = dplyr::case_when(
@@ -406,12 +431,12 @@ przeworski <- function(file_name, mtable_list) {
 }
 
 polity <- function(full_name, mtable) {
-	pol_df <- read_file(file_name) %>%
+	pol_df <- read_file(full_name) %>%
 		dplyr::select(ccode, scode, country, year, polity, polcomp, democ, polity2, autoc) %>%
 		setNames(c("ccode", "iso3", "country_name", "year", "e_p_polity", "e_polcomp", "e_democ",
 			"e_polity2", "e_autoc"))
 
-	polity_df <- polity %>%
+	polity_df <- pol_df %>%
 		dplyr::mutate(ccode = dplyr::case_when(
 			ccode == 255 & year == 1990 ~ 260,
 			ccode == 678 & year == 1990 ~ 679,
@@ -460,7 +485,7 @@ clio <- function(full_name, mtable) {
 uds <- function(full_name, mtable) {
 	pemst_df <- read_file(full_name) %>%
 		dplyr::select(ccode = cowcode, country_name = country, year,
-		e_uds_mean = mean, e_uds_median = median, e_uds_pct025 = pct025,
+		e_uds_mean = mean, e_uds = median, e_uds_pct025 = pct025,
 		e_uds_pct975 = pct975) %>%
 		dplyr::mutate(ccode = dplyr::case_when(
 		ccode == 260 & year > 1990 ~ 255,
@@ -560,48 +585,76 @@ boix <- function(full_name, mtable) {
 	return(boix_df)
 }
 
-gdp <- function(full_name, mtable) {
-	madison_df <- read_file(full_name, sheet = 3) %>%
-		dplyr::select(countrycode, country, year, dplyr::one_of(c("cgdppc", "gdppc"))) %>%
-		setNames(c("iso3", "country_name", "year", "e_migdppc")) %>%
-		dplyr::filter(!is.na(e_migdppc)) %>%
-		# we do not merge Czechoslovakia, Former USSR, and Former Yugoslavia but the "main" countries
-		dplyr::inner_join(mtable[, c("iso3", "year", "country_id")], by = c("iso3", "year")) %>%
-		dplyr::select(country_id, year, iso3, country_name, e_migdppc) %>%
-		dplyr::group_by(country_id) %>%
-		dplyr::arrange(year) %>%
-		dplyr::mutate(e_migdppcln = log(e_migdppc),
-	    	e_migdpgro = e_migdppc / dplyr::lag(e_migdppc) - 1,
-	    	e_migdpgrolns = ifelse(e_migdpgro > 0, log(e_migdpgro + 1), -log(abs(e_migdpgro - 1))),
-	    	e_migdpgrolns = ifelse(e_migdpgro == 0, 0, e_migdpgrolns)
-	    ) %>% dplyr::ungroup() %>%
-	    dplyr::arrange(country_id, year) %>%
-	    dplyr::select(-iso3, -country_name)
-	return(madison_df)
+gdppop <- function(full_name, mtable, country_unit) {
+	gdppop_df <- read_file(full_name)
+
+		stopifnot(c("indicator", "mean", "sd") %in% names(gdppop_df))
+		dt <- dplyr::select(gdppop_df, gwno, year, indicator, mean, sd) %>%
+			dplyr::filter(grepl("latent", indicator)) %>%
+			dplyr::mutate(indicator = gsub("latent_", "", indicator)) %>%
+			data.table::as.data.table()
+
+		dt <- data.table::dcast(dt, gwno + year ~ indicator,
+			value.var = c("mean", "sd"))
+
+		colnames(dt) <- gsub("(mean_|sd_)(.*)", "\\2_\\1", names(dt)) %>%
+			gsub("^_|mean_", "", x = .) %>%
+			gsub("_$", "", x = .) %>%
+			gsub("(gdp|pop)", "e_\\1", x = .)
+
+		mtable <- dplyr::select(mtable, country_id, year, gwno = ccode)
+
+		gw_cnames <- dplyr::distinct(mtable, gwno, country_id)
+		
+		fariss_dt <- dplyr::left_join(dt, gw_cnames, by = "gwno") %>%
+			dplyr::semi_join(country_unit, by = c("country_id", "year"))
+	
+		dups <- dplyr::group_by(fariss_dt, country_id,year) %>% 
+			dplyr::tally(sort = TRUE) %>% 
+			dplyr::filter(n > 1) %>% 
+			dplyr::select(-n)
+
+		non_dups <- dplyr::anti_join(fariss_dt, dups)
+
+		dup_clean <- dplyr::semi_join(fariss_dt, dups) %>% 
+			dplyr::semi_join(mtable, by = c("gwno", "year"))
+
+		fin_gdppop_df <- dplyr::bind_rows(non_dups, dup_clean) %>%
+			dplyr::select(country_id, year, dplyr::matches("^e_gdp"),
+				dplyr::matches("^e_gdpp"), dplyr::matches("^e_pop")) %>%
+			dplyr::arrange(country_id, year) %>%
+			dplyr::mutate(dplyr::across(dplyr::starts_with("e_"),
+				~round(.x, digits = 5))) %>%
+			as.data.frame()
+
+	return(fin_gdppop_df)
 }
 
 bnr <- function(full_name, mtable) {
-	stopifnot("democracyData" %in% rownames(installed.packages()))
-	bnr_df <- democracyData::bnr %>%
-		dplyr::select(ccode = cown, year, country_name = extended_country_name,
-			e_bnr_dem = event) %>%
-		dplyr::mutate(ccode = dplyr::case_when(
-			ccode == 255 & year == 1990 ~ 260,
-			TRUE ~ as.numeric(ccode)
-		),
-		e_bnr_dem = as.numeric(e_bnr_dem)) %>%
-		dplyr::inner_join(mtable[, c("ccode", "country_id", "year")],
-			by = c("ccode", "year")) %>%
-		dplyr::select(country_id, year, ccode, dplyr::everything(), -country_name, -ccode)
+
+	bnr_df <- read_file(full_name, header = TRUE) %>%
+		select(numeric_code = ccode, year, bnr_dem) %>%
+		mutate(numeric_code = case_when(
+			numeric_code == 991 ~ 250,
+		numeric_code == 992 ~ 458,
+		numeric_code == 736 ~ 729,
+		numeric_code == 200 ~ 203,
+		numeric_code == 280 ~ 276,
+		TRUE ~ as.numeric(numeric_code)
+		)) %>%
+		dplyr::inner_join(mtable[, c("numeric_code", "country_id", "year")],
+			by = c("numeric_code", "year")) %>%
+		dplyr::select(country_id, year, e_bnr_dem = bnr_dem)
 
 	return(bnr_df)
 }
 
-ti <- function(full_name, mtable) {
+ti_cpi <- function(full_name, mtable) {
 	ti <- read_file(full_name, sheet = 2)
-	names(ti) <- ti[1,]
+	colnames(ti) <- ti[1,]
+	colnames(ti)[grepl("Country", colnames(ti))] <- "country_name"
 	ti <- ti[-1,] %>%
-		dplyr::select(country_name = Country, iso3 = ISO3, dplyr::matches("CPI")) %>%
+		dplyr::select(country_name, iso3 = ISO3, dplyr::matches("CPI")) %>%
 		reshape2::melt(id.vars = c("country_name", "iso3"),
 			variable.name = "year", value.name = "e_ti_cpi"
 		) %>%
@@ -616,6 +669,21 @@ ti <- function(full_name, mtable) {
 		inner_join(mtable[,c("iso3", "country_id", "year")], by = c("iso3", "year")) %>%
 		select(country_id, everything(), -country_name, -iso3) %>%
 		arrange(country_id, year)
+	return(ti_df)
+}
+
+wb_pop <- function(full_name, mtable) {
+	stopifnot("WDI" %in% rownames(installed.packages(lib.loc = .libPaths()[1])))
+
+	wdi <- WDI::WDI(country= "all", indicator = "SP.POP.TOTL") %>%
+		setNames(c("iso2", "country_name", "e_" %^% full_name, "year"))
+
+	wdi_df <- dplyr::inner_join(wdi, mtable[,c("iso2", "country_id", "year")], by = c("iso2", "year")) %>%
+		dplyr::filter(!is.na(e_wb_pop)) %>%
+		dplyr::arrange(country_id, year) %>%
+		dplyr::select(country_id, year, dplyr::everything(), -iso2, -country_name)
+
+	return(wdi_df)
 }
 
 #' Load and clean external data
@@ -638,20 +706,19 @@ ti <- function(full_name, mtable) {
 #' \dontrun{load_ext_source(list.files("~/Documents/edata/2021/upd/", full.names = TRUE)[1])}
 #'
 #' @export
-load_ext_source <- function(file_name = "bnr", con) {
+load_ext_source <- function(file_name = "wb_pop", con) {
 	data_key <- guess_source_by_file_name(file_name)
 	stopifnot(length(data_key) == 1,
 		!is.na(data_key))
 
 	tbl_name <- choose_mtable(data_key)
 
-	if (tbl_name %in% c("all_df") | data_key %in% c("fh", "area", "gapminder")) {
-		db <- pg_connect()
-		cu <- dplyr::tbl(db, "country_unit") %>%
-				dplyr::select(country_id, year) %>%
-				dplyr::collect(n = Inf) %>%
-				dplyr::distinct()
-		DBI::dbDisconnect(db)		
+	if (tbl_name %in% c("all_df") | data_key %in% c("fh", "gapminder", "gdppop")) {
+
+		if (nchar(Sys.getenv("ROOT_DIR")) < 1) {stop("Set ROOT_DIR environment variable!")}
+		
+		cu <- load_country_unit() %>%
+			dplyr::select(country_id, year)
 	}
 
 	if (tbl_name %in% c("all_df")) {
@@ -663,12 +730,9 @@ load_ext_source <- function(file_name = "bnr", con) {
 
 		# I don't really like this part but let's just hope that it works...
 		# don't need to invoke it too often luckily
-		db <- pg_connect()
-		cntr <- dplyr::tbl(db, "country") %>%
-			dplyr::select(country_id, country_name = name) %>%
-			dplyr::collect(n = Inf)
-		DBI::dbDisconnect(db)
-
+		cntr <- load_country() %>%
+			dplyr::select(country_id, country_name = name)
+		
 		mtable <- dplyr::bind_rows(all_mtables, cntr) %>%
 			dplyr::distinct() %>%
 			dplyr::semi_join(cu, by = "country_id")
@@ -695,7 +759,7 @@ load_ext_source <- function(file_name = "bnr", con) {
 		return(out)
 	}
 	
-	if (data_key %in% c("fh", "area", "gapminder")) {
+	if (data_key %in% c("fh", "gapminder", "gdppop")) {
 			res <- f(file_name, mtable, cu)
 		} else if (data_key == "przeworski") {
 			res <- f(file_name, mtable_list)

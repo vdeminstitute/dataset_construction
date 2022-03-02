@@ -16,7 +16,8 @@ set_env(MODULE_NAME = "cleaning")
 
 remove_sequential <- function(df, VARNAME, qtable, coder) {
     stopifnot(VARNAME != "", !is.na(VARNAME))
-        
+	stopifnot(isTRUE(VARNAME %in% qtable$name) | VARNAME == "vignettes")
+
     info("Removing sequential codings...")
     if (qtable %>% filter(name == VARNAME) %>%
         pull(backfill_question) %T>%
@@ -115,9 +116,8 @@ recode_and_remove_coders <- function(df, coders) {
     # Some people are not actually bad coders but are flagged wrong in the interface
     bad_coders <- bad_coders[!bad_coders %in% c(1617, 5234, 4528,
         6106, 6105, 5598, 6104, 6107, 6103)]
-    # We want their A-data  and v2eltype codings.
-    stopifnot(df %>% filter(coder_id %in% bad_coders) %>% nrow %>%
-        {. == 0})
+    stopifnot(df %>% filter(class %in% c("A", "A*"), coder_id %in% bad_coders) %>% 
+		nrow %>% {. == 0})
 
     df %<>% filter(is.na(coder_id) | !coder_id %in% bad_coders)
 
@@ -236,7 +236,7 @@ main <- function(VARNAME, df, qtable, country, coder) {
     
     df %>%
         remove_sequential(., VARNAME, qtable, coder) %>%
-        recoding_country_ids %>%
+        recoding_country_ids(.) %>%
         merge_reference_tables(., qtable, country) %>%
         clean_codingstart_outside(., VARNAME) %>%
         recode_and_remove_coders(., coder) %>%
@@ -273,10 +273,13 @@ if (no_test()) {
     collectedInputs <- named_list(VARNAME, df, qtable, country, coder)
     setNames(list(do.call(main, collectedInputs), dirtylist), 
         c(VARNAME, "dirt")) %>%
-        write_file(., OUTFILE, dir_create = T)
+    write_file(., OUTFILE, dir_create = T)
     info("Done first cleaning...")
+    # stop()
 } else {
     # Tests
-    testthat::test_file("~/proj/mm-prep/tests/init/test_cleaning.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_cleaning.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)
+

@@ -1,10 +1,9 @@
 
 
-
 #' @export
-mm_submit_XXXXXX_job <- function(variable, iter, timeout = "60:00:00",
+mm_submit_tetralith_job <- function(variable, iter, timeout = "60:00:00",
                     directory = Sys.getenv("MM_DIR")) {
-    system("ssh XXXXXX " %^%
+    system("ssh tetralith " %^%
            "'cd " %^% directory %^% "; " %^%
            "export LOGDIR=" %^% directory %^% "/logs/; " %^%
            "export VARIABLENAME=" %^% variable %^% "; " %^%
@@ -20,11 +19,11 @@ mm_submit_XXXXXX_job <- function(variable, iter, timeout = "60:00:00",
 
 
 #' @export
-bfa_submit_XXXXXX_job <- function(index,
+bfa_submit_tetralith_job <- function(index,
     timeout = "24:00:00",
     directory = Sys.getenv("BFA_DIR"),
     script = "R/bfa.R",
-    hpc = "XXXXXX") {
+    hpc = "tetralith") {
     system("ssh " %^% hpc %^% " " %^%
            "'cd " %^% directory %^% "; " %^%
            "export LOGDIR=" %^% directory %^% "/logs/; " %^%
@@ -36,7 +35,11 @@ bfa_submit_XXXXXX_job <- function(index,
 }
 
 #' @export
-mm_read_log <- function(logpath) {
+mm_read_log <- function(logpath, local_dir = FALSE) {
+	if (!local_dir) {
+		stopifnot(is_path_mounted())
+	}
+	
     print(logpath)
     f <- readLines(logpath)
     if (any(grepl("file.exists(INFILE) is not TRUE", f, fixed = T)))
@@ -86,6 +89,15 @@ mm_read_log <- function(logpath) {
             gsub("END: ", "", ., fixed = T) %>%
             .[1]
     }
+	if (df$status == "cancelled") {
+		df$end <- 
+			stringr::str_extract(f, "CANCELLED\\sAT\\s.*$") %>% 
+			na.omit %>%
+			gsub("CANCELLED AT ", "", ., fixed = TRUE) %>%
+			gsub(" ***", "", ., fixed = TRUE) %>%
+			gsub("T", " ", ., fixed = TRUE)
+
+	}
     df %<>% dplyr::select(job_id, name, iter, status, start, dplyr::everything())
     return(df)
 }
@@ -116,15 +128,15 @@ make_slurm_fname <- function(file_name) {
 #' @export
 submit_accountability <- function(v, directory = Sys.getenv("ACC_DIR"),
     timeout = "72:00:00", script = "scripts/submit.sh",
-        hpc = "XXXXXX") {
+        hpc = "tetralith") {
 
     stopifnot(!is.null(v), length(v) == 1)
-    if (hpc == "XXXXXX") {
+    if (hpc == "tetralith") {
         ssq <- shQuote("projinfo -C | grep snic | awk '{print $3}'")
         account <- system(paste0("ssh ", hpc, " ", ssq), intern = TRUE)
     }
-    if (hpc == "XXXXXX")
-        account <- "XXXXXX"
+    if (hpc == "kebnekaise")
+        account <- "SNIC2019-3-154"
 
     logfile <- paste0(directory, "/logs/", v, "-", Sys.Date(), "_%A_%N.out")
     rscript <- paste0(directory, "/R/", v, ".R")
@@ -139,8 +151,8 @@ submit_accountability <- function(v, directory = Sys.getenv("ACC_DIR"),
 }
 
 #' @export
-squeue_table <- function(USER = "XXXXXX") {
-    system(paste0("ssh XXXXXX \"squeue -u ", USER, 
+squeue_table <- function(USER = "x_johvo") {
+    system(paste0("ssh tetralith \"squeue -u ", USER, 
                   " --format='%.18i %.9P %.20j %.8u %.2t %.10M %.6D %R'\""), 
            intern = TRUE) %>%
     strsplit(., " ") %>% 
@@ -168,6 +180,7 @@ mm_summary <- function(df_logs) {
         any(status == "running") ~ "running",
         any(status == "other") ~ "other",
         any(status == "failed") ~ "failed",
+		any(status == "timed_out") ~ "timed_out",
         TRUE ~ "weird"), .groups = "drop") %>%
     dplyr::arrange(name, status) %$%
     table_(status)

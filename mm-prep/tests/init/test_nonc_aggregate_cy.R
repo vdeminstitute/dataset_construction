@@ -28,17 +28,17 @@ test_that("merge_ref_tables", {
 qtable <- data.frame(name = c("v2clacfree", "v2ddspmor"),
 	date_specific = c(NA, NA),
 	question_type = c("P", "R"),
-	index_type = c(NA, "interval")
-	)
+	index_type = c(NA, "interval"),
+	cy_aggregation = c("Last", "Day-weighted mean"))
+
+	
 
 test_that("find_aggregation_method", {
 	expect_error(find_aggregation_method(data.frame(), "v2clacfree"))
 	expect_error(find_aggregation_method(qtable, NA))
 	expect_error(find_aggregation_method(qtable, "help"))
 	# the following two lines exibit dubious function behaviour (ain't much to do about it)
-	expect_equal(find_aggregation_method(qtable, "v2help"), "last")
-	expect_equal(find_aggregation_method(qtable, "v3help"), "last")
-	expect_equal(find_aggregation_method(qtable, "v2clacfree"), "max")
+	expect_equal(find_aggregation_method(qtable, "v2clacfree"), "last")
 	expect_equal(find_aggregation_method(qtable, "v2ddspmor"), "ratio")
 	})
 

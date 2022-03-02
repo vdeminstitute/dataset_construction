@@ -1,22 +1,3 @@
-#' Partial function application
-#'
-#' Partially applies a variable number of arguments to a given function.
-#'
-#' @param fn A function.
-#' @param ... Arguments to be applied.
-#'
-#' @examples
-#' x <- c(1, 2, NA, 4)
-#' f <- partial(mean, na.rm = TRUE)
-#' f(x)
-#'
-#' @export
-partial <- function(fn, ...) {
-    dots <- list(...)
-
-    force(fn)
-    function(...) do.call(fn, c(dots, list(...)))
-}
 
 #' Evaluate an expression with substitution
 #'

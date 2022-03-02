@@ -63,6 +63,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = T)    
     info("Done with nonc_wide...")
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/init/test_nonc_wide.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_nonc_wide.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

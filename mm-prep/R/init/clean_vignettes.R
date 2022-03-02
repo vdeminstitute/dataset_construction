@@ -16,7 +16,7 @@ set_env(MODULE_NAME = "clean_vignettes")
 # Functions
 # --------------------------------------------------------------------------
 clean_by_vtable <- function(vdata_df, vtable) {
-    info("Filter out vignettes outside vtable")
+    info("Filter out vigntees outside vtable")
     df <- filter(vdata_df, question_id %in% vtable$vignette_id)
     stopifnot(nrow(df) > 0)
 
@@ -36,7 +36,6 @@ clean_by_vtable <- function(vdata_df, vtable) {
     df %<>% mutate(vignette_id = ifelse(!is.na(hist_merged_id),
                                     hist_merged_id,
                                     vignette_id))
-
     df %>%
         arrange(desc(id)) %>%
         distinct(parent_name, vignette_id, coder_id, .keep_all = T) %>%
@@ -127,7 +126,6 @@ main <- function(vtable, qtable, vdata_df, VARNAME) {
 
 # Run script
 if (no_test()) {
-
     # Global variables
     get_globals()
     dirtylist <- list()
@@ -145,6 +143,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = T)    
     info("Done with clean_vignettes...")
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/init/test_clean_vignettes.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_clean_vignettes.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

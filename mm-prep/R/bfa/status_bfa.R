@@ -13,6 +13,10 @@ OUTFILE <- create_outfile(id = Sys.getenv("TASK_ID"),
 check_direct_deps(id = Sys.getenv("TASK_ID"), db)
 DONE <- FALSE
 
+# Check if directory is mounted to HPC
+stopifnot(is_path_mounted())
+
+
 # Check log files for convergence or if they are done?!
 ll <- list.files(file.path(Sys.getenv("BFA_SSH_DIR"), "logs"),
                  full.names = T)

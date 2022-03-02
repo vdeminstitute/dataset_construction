@@ -29,12 +29,14 @@ zz_df <- read_file(file.path(ROOT, "dataset", "v2zz_coder_level.rds"))
 # vars for interpolated:
 inter_vars <-
     tasks %>%
+	filter(question_name != "v2test") %>%
     filter(module_name == "interpolate_coders") %$% task_id
 file_list_inter <- create_outfile_local(inter_vars, tasks, modules, ROOT)
 
 # vars for mm:
 mm_vars <-
     tasks %>%
+	filter(question_name != "v2test") %>%
     filter(question_name %!~% "_rec$" | question_name == "v2exdfcbhs_rec") %>%
     filter(module_name == "status_mm") %$% task_id
 file_list_mm <- create_outfile_local(mm_vars, tasks, modules, ROOT)
@@ -62,24 +64,27 @@ prep.ll <- mclapply(file_list_inter, function(f) {
         lazy_dt(input.data$wdata) %>%
         mutate(country_text_id = text_id, historical_date = dates) %>%
         select(country_text_id, historical_date, everything()) %>%
-        as.data.frame(stringsAsFactors = FALSE) %>%
-        reshape2::melt(id.vars = c("country_text_id", "historical_date"),
+        as.data.table(.) %>%
+        data.table::melt(id.vars = c("country_text_id", "historical_date"),
             measure.vars = 3:ncol(.),
             variable.name = "coder_id",
-            variable.factor = F,
-            na.rm = T)
+            variable.factor = FALSE,
+            na.rm = TRUE)
+    wdata <- as.data.frame(wdata)
+    wdata$coder_id <- as.numeric(wdata$coder_id)
 
     conf <-
         lazy_dt(input.data$conf_mat) %>%
         mutate(country_text_id = text_id, historical_date = dates) %>%
         select(country_text_id, historical_date, everything()) %>%
-        as.data.frame(stringsAsFactors = FALSE) %>%
-        reshape2::melt(id.vars = c("country_text_id", "historical_date"),
+        as.data.table(.) %>%
+        data.table::melt(id.vars = c("country_text_id", "historical_date"),
             measure.vars = 3:ncol(.),
             variable.name = "coder_id",
-            variable.factor = F,
-            na.rm = T)
-        
+            variable.factor = FALSE,
+            na.rm = TRUE)
+    conf <- as.data.frame(conf)
+    conf$coder_id <- as.numeric(conf$coder_id)    
 
     colnames(wdata)[colnames(wdata) == "value"] <- varname
     colnames(conf)[colnames(conf) == "value"] <- varname %^% "_conf"
@@ -91,6 +96,12 @@ prep.ll <- mclapply(file_list_inter, function(f) {
 
 raw.df <- rbindlist(prep.ll)
 raw.df %<>% as.data.frame %>% mutate(coder_id = as.numeric(coder_id))
+
+# We have had a bug with factors in the past, but we do not have a coder_id 1
+stopifnot(!1 %in% raw.df$coder_id)
+
+
+
 
 
 ###
@@ -121,6 +132,8 @@ betas <-
 stopifnot(no_duplicates(betas, cols = "coder_id"))
 df_betas <- wide_to_long(betas, id_vars = "coder_id")
 
+
+
 df <- long_to_wide(raw.df,
                    id_vars = c("country_text_id", "historical_date", "coder_id"),
                    id_var = "variable",
@@ -142,11 +155,11 @@ out %<>%
     clean_by_utable(utable) %>%
     select(-year) %>%
     select(country_text_id, country_id, historical_date, coder_id, everything()) %>%
-    left_join(zz_df, by = c("country_text_id", "coder_id"))
+    left_join_(zz_df, by = "coder_id")
 
 dir.create(file.path(ROOTDIR, "dataset", "V-Dem-coder-level"), showWarnings = F)
 fwrite(out,
        file.path(ROOTDIR, "dataset", "V-Dem-coder-level",
-                 "coder_level_ds_v11.csv"))
+                 "coder_level_ds_v12.csv"))
                  
 update_task_status(db = db)

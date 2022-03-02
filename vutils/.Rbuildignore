@@ -1,0 +1,7 @@
+.clang-format
+.editorconfig
+.lintr
+^.*\.Rproj$
+^\.Rproj\.user$
+Makefile
+README.md

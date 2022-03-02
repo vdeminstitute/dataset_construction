@@ -23,6 +23,8 @@ run_task <- function(id, module_name, question_name, cmd = "Rscript", script,
         envir_vars <- paste0(envir_vars, "export OPENBLAS_NUM_THREADS=1;")
     }
 
+    # The guy who answered is awesome!
+    # https://stackoverflow.com/questions/64678404/how-to-use-the-following-command-from-r-echo-pipestatus1
     end_string <- '2>&1 | tee /dev/tty | xargs -d "\n" log_postgres; echo "${pipestatus[1]}"'
     
     if (isTRUE(docopt == "" | is.na(docopt))) {
@@ -249,7 +251,7 @@ run_make <- function (tasks, n_cores = 1, db) {
 }
 
 #' @export
-delete_logs <- function(id, db_log = pg_connect(Sys.getenv("DS_VERSION"))) {
+delete_logs <- function(id, db_log = vbase::pg_connect(Sys.getenv("DS_VERSION"))) {
     DBI::dbGetQuery(db_log,
         "DELETE FROM pipe.logs WHERE task_id=" %^% id %^% ";") %>% invisible
     DBI::dbDisconnect(db_log) %>% invisible
@@ -464,6 +466,27 @@ make_id <- function(var_name, conn) {
 #'
 #' @param conn A PostgreSQL connection.
 #'
+#' @examples
+#' # !!!Don't Run!!!
+#' # Don't run this function in parallel, NEVER EVER.
+#' # Otherwise, everything is going to be screwed up!
+#' # Below, you see a typical use of the function.
+#'
+#' # library(vutils)
+#' # conn <- pg_connect("v902")
+#' # vars <- c("v2eldonate", "v2peasbsoc", "v2psprbrch", "v2exdfcbhs")
+#' # mode_name <- c("download_var", "cleaning", "clean_all", "cont_hist_merge")
+#' # mk <- tbl(conn, dbplyr::in_schema("pipe", "make")) %>% collect(n = Inf)
+#'
+#' # lapply(vars, function(var) {
+#'    # make_module(mode_name, var, mk, conn) %>%
+#'    # mutate(docopt = NA_character_,
+#'    #     file = paste0(var, ".rds"),
+#'    #     tbl = NA_character_,
+#'    #     version = "v902",
+#'    #     ts = NA) %>%
+#'    # pg_append_table(., "pipe.make", conn)
+#' # })
 #'
 #' @export
 make_module <- function(mod_name, var_name, make_df, conn) {

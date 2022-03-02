@@ -3,6 +3,7 @@
 # Download a prespecified variable
 
 suppressMessages(library(vutils))
+suppressMessages(library(vbase))
 suppressMessages(library(dbplyr))
 suppressMessages(library(dplyr))
 set_env(MODULE_NAME = "download_var")

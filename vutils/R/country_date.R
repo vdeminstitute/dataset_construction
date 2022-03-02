@@ -217,6 +217,19 @@ to_year.character <- function(date) {
     x
 }
 
+#' Year to date
+#'
+#' @export
+year_to_date <- function(v) {    
+    as.Date(paste0(v, "-12-31"), format = "%Y-%m-%d")
+}
+
+#' Date to year
+#'
+#' @export
+date_to_year <- function(date) UseMethod("to_year")
+
+
 
 
 

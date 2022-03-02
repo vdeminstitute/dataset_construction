@@ -119,6 +119,7 @@ locf_helper <- function(v) {
 }
 
 interpolate_across_years <- function(df) {
+    
     dt <- as.data.table(df)
     dt <- dt[, year := to_year(historical_date)][grepl("-12-31$", historical_date), year_appended := year + 1][,
         year_appended := fifelse(is.na(year_appended), year, year_appended)][, n_obs := .N, by = list(country_text_id, year_appended)]
@@ -249,7 +250,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = TRUE)
     info("Done interpolating " %^% VARNAME)
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/mm-prep/interpolate_coders_tests.R")
+    testthat::test_file("~/proj/mm-prep/tests/mm_prep/test_interpolate_coders.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)
-

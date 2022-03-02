@@ -11,7 +11,6 @@
 #               - Backfill ratings/confs unless month level change
 #        4. Split final reduced df back into ratings and confidences
 #
-# For further details see the source code for the function
 # ==========================================================================
 
 options(warn = 2)
@@ -139,6 +138,7 @@ reduce_confidences <- function(m, group_id) {
         split.data.frame(m, group_id) %>%
         lapply(., function(mm) {
 
+
             mm %<>% 
                 sort_matrix_by_rownames(decreasing = TRUE) %>% locf %>%
                 sort_matrix_by_rownames(decreasing = FALSE) %>% locf
@@ -149,6 +149,7 @@ reduce_confidences <- function(m, group_id) {
                 nrow = 1, 
                 dimnames = list(rownames(mm)[1], colnames(mm)))
             outM
+
     }) %>% do.call(rbind, .)
     outi %<>% 
         sort_matrix_by_rownames %>%
@@ -235,10 +236,10 @@ if (no_test()) {
     out <- setNames(list(do.call(main, collectedInputs)), VARNAME)
     stopifnot(!is.null(rownames(out[[VARNAME]]$wdata))) 
     write_file(out, OUTFILE, dir_create = TRUE)
-
     info("Reduction done for " %^% VARNAME)
 } else {
     # Tests
-    testthat::test_file("~/proj/mm-prep/tests/mm-prep/reduce_tests.R")
+    testthat::test_file("~/proj/mm-prep/tests/mm_prep/test_reduce.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

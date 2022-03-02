@@ -27,25 +27,6 @@ cd_df <- function(input.df) {
   # Please forgive me.
   attach(input.df)
 
-  # Construct hosw_rec and hogw_rec (relative power of hos/hog)
-  #
-  # Compare HOS vs HOG power appoint cabinet and dismiss ministers.
-  #
-  # A couple issues:
-  #     1. The 0.5 category will practically never be evaluated as TRUE;
-  #        the probability of the MM output for, as an example,
-  #        v2exdfdbhs_rec and v2exdjcbhg being exactly the same is so
-  #        infinitesimally small that this condition is redundant.
-  #     2. Shouldn't we be using the OSP version of these
-  #        variables?
-  #     3. There's a logical inconsistency with how we're handling NA
-  #        here and what gets set later as hogw_rec. Essentially,
-  #        hosw_rec gets set when the HOS variable is NOT missing and
-  #        the HOG variable is; however, the opposite is not true for
-  #        hogw_rec.
-  #     4. Lastly, these NA checks are a holdover from the Stata script;
-  #        they should be mostly fixed already by downstream cleaning,
-  #        but we'll keep them for now.
   v2ex_hogw <- 1 - v2ex_hosw
 
   ###

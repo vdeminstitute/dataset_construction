@@ -39,7 +39,6 @@ calc_choices <- function(df, qtable) {
 }
 
 calc_ms_expanded <- function(df, choices_df) {
-    # These are all the observations we should have
     ms_frame <- df %>%
         filter(question_type == "S") %>% 
         left_join_(choices_df, by = "name") %>%
@@ -139,6 +138,7 @@ if(no_test()) {
     info("Done with unnesting multiple selection vars")
 } else {
     # Tests
-    testthat::test_file("~/proj/mm-prep/tests/init/test_unnest_ms.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_unnest_ms.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

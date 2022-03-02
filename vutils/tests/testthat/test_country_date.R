@@ -20,12 +20,15 @@ test_that("is_country_date_regular", {
 })
 
 test_that("is_country_date_party", {
-    expect_true(is_country_date("SWE 1274 1960-12-31", party = TRUE))
+    expect_false(is_country_date("SWE 1274 1960-12-31", party = TRUE))
+    expect_true(is_country_date("SWE 001274 1960-12-31", party = TRUE))
 
     # We're not currently checking if the date is valid
-    expect_true(is_country_date("SVN 22222 2002-99-99", party = TRUE))
+    expect_false(is_country_date("SVN 22222 2002-99-99", party = TRUE))
+    expect_true(is_country_date("SVN 022222 2002-99-99", party = TRUE))
 
-    expect_equal(is_country_date(c("AFG 1 1901-01-01", NA_character_), party = TRUE), c(T, F))
+    expect_equal(is_country_date(c("AFG 1 1901-01-01", NA_character_), party = TRUE), c(FALSE, FALSE))
+    expect_equal(is_country_date(c("AFG 000001 1901-01-01", NA_character_), party = TRUE), c(TRUE, FALSE))
 
     expect_false(is_country_date("historical_1_v1", party = TRUE))
     expect_false(is_country_date("BRN 33 66-12-31", party = TRUE))
@@ -59,7 +62,7 @@ test_that("get_date_regular", {
 })
 
 test_that("get_date_party", {
-    expect_equal(get_date(c("UUU 123 1900-01-01", "ARG 123 2016-11-24"), party = TRUE),
+    expect_equal(get_date(c("UUU 000123 1900-01-01", "ARG 000123 2016-11-24"), party = TRUE),
                  as.Date(c("1900-01-01", "2016-11-24")))
     expect_error(get_date("historical_3_v3", party = TRUE))
     expect_error(get_date(c(NA, "USA 123 1879-11-10"), party = TRUE))
@@ -75,7 +78,7 @@ test_that("get_text_id_regular", {
 })
 
 test_that("get_text_id_party", {
-    expect_equal(get_text_id(c("ARG 12 1906-06-01", "EDD 12 1789-12-31"), party = TRUE), c("ARG", "EDD"))
+    expect_equal(get_text_id(c("ARG 000012 1906-06-01", "EDD 000012 1789-12-31"), party = TRUE), c("ARG", "EDD"))
     expect_error(get_text_id("pilot_1_v1", party = TRUE))
     expect_error(get_text_id(c(NA, "ARG 1 1906-06-01"), party = TRUE))
     expect_error(get_text_id(c("MMMM 1888-08-08", party = TRUE)))
@@ -125,7 +128,7 @@ test_that("create_idx", {
 })
 
 test_that("get_party_id", {
-    expect_equal(get_party_id("RUS 123 2000-01-01"), 123)
+    expect_equal(get_party_id("RUS 000123 2000-01-01"), 123)
     expect_error(get_party_id("RUS 1234567 2000-01-01"))
     expect_error(get_party_id("RUS123 2000-01-01"))
     expect_error(get_party_id("RUS 2000-01-01"))

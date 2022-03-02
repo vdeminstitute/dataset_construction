@@ -3,7 +3,24 @@ library(rjags)
 library(runjags)
 library(parallel)
 
+sessionInfo()
+
+NAME <- "v2x_veracc"
+ITER <- 125L
+BURNIN <- 15000L
+THIN <- 120L
+MCMC <- 2000L
+WARMUP <- 5000L
+CHAINS <- 32L
+
 acc <- readRDS(file.path("input", "acc_input.rds"))
+model_path <- file.path("jags", "accountability_vertical.txt")
+
+sprintf("%d runs with %d sampling iterations, %d burnin, and %d thin",
+        ITER, MCMC, BURNIN, THIN) %>% info
+
+sprintf("Found %d total obs", nrow(acc)) %>% info
+
 
 ###analysis
 hmod <- list(
@@ -19,14 +36,15 @@ hmod <- list(
 
 
 hmodel <- run.jags(method = "parallel",
-  model = file.path("jags", "accountability_vertical.txt"),
+  model = model_path,
   monitor = c("betaEV", "tauEV", "betaER", "betaPE", "tauPE","betaO3", "betaP", "tauPP", "tauP",
     "xiV", "xiP"),
-  data = hmod, n.chains = 32,  adapt = 5000, inits = list(xiV = 2 * acc$v2x_elecreg - 1),
-  burnin = 15000, sample = 125, thin = 120, summarise = FALSE, plots = FALSE,
+  data = hmod, n.chains = CHAINS,  adapt = WARMUP, inits = list(xiV = 2 * acc$v2x_elecreg - 1),
+  burnin = BURNIN, sample = ITER, thin = THIN, summarise = FALSE, plots = FALSE,
   modules = c("glm", "lecuyer"))
 
-library(runjags)
+info("JAGS models finished")
+
 cds <- as.mcmc.list(hmodel)
 
 ###check for convergence using gelman diagnostics
@@ -63,9 +81,9 @@ cds_x <- as.mcmc.list(cds_x)
 gelman.diag(cds_x,multivariate=F) ###Check convergence of election parameters
 
 
-blah <- gelman.diag(cds[,sample(39:(38+nrow(acc)),2000)],multivariate=F) ###Parameters
-mean(blah[[1]][,2]>1.01)
-blah <- gelman.diag(cds[,sample((39+nrow(acc)):(38+2*nrow(acc)),2000)],multivariate=F) ###Parameters
+blah <- gelman.diag(cds[,sample(39:(38+nrow(acc)), MCMC)],multivariate=F) ###Parameters
+info("Proportion of R hat above 1.01:" %^% mean(blah[[1]][,2]>1.01))
+blah <- gelman.diag(cds[,sample((39+nrow(acc)):(38+2*nrow(acc)), MCMC)],multivariate=F) ###Parameters
 mean(blah[[1]][,2]>1.01)
 
 ###xiH = horizontal accountability
@@ -99,8 +117,12 @@ acc$v2x_veracc_osp_codelow <- pxi68[,1]
 acc$v2x_veracc_osp_codehigh <- pxi68[,2]
 
 out <- list()
-out[["v2x_veracc"]]$cy <- acc
-out[["v2x_veracc"]]$hmodel <- hmodel
-write_file(acc, file.path("out", "v2x_veracc" %^% "_" %^%
+out[[NAME]]$cy <- acc
+out[[NAME]]$mcmc_posteriors <- hmodel
+out[[NAME]]$ITER <- ITER
+out[[NAME]]$model_code <- paste0(readLines(model_path), collapse = "\n")
+
+write_file(out, file.path("out", NAME %^% "_" %^%
         Sys.getenv("SLURM_JOB_ID") %^% ".rds"))
-print("Finished calculation :)")
+
+info("Finished!")

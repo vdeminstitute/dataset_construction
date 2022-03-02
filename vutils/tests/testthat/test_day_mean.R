@@ -98,10 +98,6 @@ test_that("day_mean.matrix", {
     expect_equal(day_mean(m[-c(1, 2), -1], dates[-1]), m[-c(1, 2), -1])
 })
 
-# We haven't written this method yet, so just check error
-test_that("day_mean.default", {
-    expect_error(day_mean(c(1, 2), as.Date(c("1900-01-01", "1900-12-31"))))
-})
 
 # Fun bugs be lurking for those who go back before 1900
 test_that("day_mean prior 1900", {

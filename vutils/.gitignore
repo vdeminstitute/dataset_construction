@@ -1,0 +1,12 @@
+vutils.Rcheck/
+/**/.Rhistory
+/**/#*
+/**/.#*
+/**/*.rds
+/**/*.so
+/**/*.o
+/**/*.gcda
+/**/*.gcno
+/**/*.directory
+vutils_*.tar.gz
+*Rproj*

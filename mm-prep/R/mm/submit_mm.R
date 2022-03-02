@@ -12,17 +12,26 @@ ROOT <- Sys.getenv("ROOT_DIR")
 varname <- get_varname(id = Sys.getenv("TASK_ID"), db)
 
 # Check if directory is mounted to HPC
-mm <- system("mountpoint /mnt/XXXXXX", intern = TRUE)
-stopifnot(isTRUE(attr(mm, "status") == 0) || grepl("is a mountpoint", mm))
+stopifnot(is_path_mounted())
 
 # copy mm file to mounted HPC directory
 objs <- find_dep_files(Sys.getenv("TASK_ID"), db)
 write_file(objs[[varname]], file.path(Sys.getenv("MM_SSH_DIR"), "mm", varname %^% ".rds"))
 
+timeout <- "12:00:00"
+
+# Some of these variables may take unusually long so we increase the timeout
+if (varname %in% c("v2cldiscm", "v2caviol", "v2pepwrses", 
+				   "v2cacamps", "v2merange", "v2clacjstw", 
+				   "v2caassemb", "v2csprtcpt", "v2csantimv", 
+				   "v2cagenmob", "v2lgcrrpt")) {
+	timeout <- "96:00:00"				   
+}
+
 # submit job
-mm_submit_XXXXXX_job(variable = varname,
+mm_submit_XXXXX_job(variable = varname,
                         iter = 10000L,
-                        timeout = "96:00:00",
+                        timeout = timeout,
                         directory = Sys.getenv("MM_DIR"))
 
 update_task_status(db = db)

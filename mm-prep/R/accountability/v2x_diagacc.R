@@ -3,10 +3,26 @@ library(rjags)
 library(runjags)
 library(parallel)
 
+sessionInfo()
+
+NAME <- "v2x_diagacc"
+ITER <- 250L
+BURNIN <- 2500L
+THIN <- 10L
+MCMC <- 2000L
+WARMUP <- 5000L
+CHAINS <- 32L
 
 info("reading file...")
 
 acc <- readRDS(file.path("input", "acc_input.rds"))
+model_path <- file.path("jags", "accountability_diagonal.txt")
+
+sprintf("%d runs with %d sampling iterations, %d burnin, and %d thin",
+        ITER, MCMC, BURNIN, THIN) %>% info
+
+sprintf("Found %d total obs", nrow(acc)) %>% info
+
 
 ###analysis
 hmod <- list(
@@ -21,32 +37,34 @@ hmod <- list(
 
 
 hmodel <- run.jags(method = "parallel",
-                   model = file.path("jags", "accountability_diagonal.txt"),
+                   model = model_path,
                    monitor = c("betaCS", "tauCS", "tauC",
                              "betaMV", "tauMV", "tauM",
                              "betaFE", "tauFE", "tauF",
                              "betaES", "tauES", "xiS",
                              "xiC", "xiF", "xiM"),
-                   data = hmod, n.chains = 32,
+                   data = hmod, n.chains = CHAINS,
                    inits = list(xiS = 2 * as.numeric(acc$v2dlengage > median(acc$v2dlengage, na.rm=T)) - 1),
-                   adapt = 5000, burnin = 2500, sample = 250, thin = 10,
+                   adapt = WARMUP, burnin = BURNIN, sample = ITER, thin = THIN,
                    summarise = FALSE, plots = FALSE, modules = c("glm", "lecuyer"))
+
+info("JAGS models finished")
 
 
 ###check for convergence using gelman diagnostics
 ###
-library(runjags)
+#acc <- readRDS("acc.rds")
 cds <- as.mcmc.list(hmodel)
 
 ###check for convergence using gelman diagnostics
 gelman.diag(cds[,1:45]) ###Parameters
-blah <- gelman.diag(cds[,sample(46:(45+nrow(acc)),2000)],multivariate=F) ###Parameters
+blah <- gelman.diag(cds[,sample(46:(45+nrow(acc)), MCMC)],multivariate=F) ###Parameters
+info("Proportion of R hat above 1.01: " %^% mean(blah[[1]][,2]>1.01))
+blah <- gelman.diag(cds[,sample((46+nrow(acc)):(45+2*nrow(acc)), MCMC)],multivariate=F) ###Parameters
 mean(blah[[1]][,2]>1.01)
-blah <- gelman.diag(cds[,sample((46+nrow(acc)):(45+2*nrow(acc)),2000)],multivariate=F) ###Parameters
+blah <- gelman.diag(cds[,sample((46+2*nrow(acc)):(45+3*nrow(acc)), MCMC)],multivariate=F) ###Parameters
 mean(blah[[1]][,2]>1.01)
-blah <- gelman.diag(cds[,sample((46+2*nrow(acc)):(45+3*nrow(acc)),2000)],multivariate=F) ###Parameters
-mean(blah[[1]][,2]>1.01)
-blah <- gelman.diag(cds[,sample((46+3*nrow(acc)):(45+4*nrow(acc)),2000)],multivariate=F) ###Parameters
+blah <- gelman.diag(cds[,sample((46+3*nrow(acc)):(45+4*nrow(acc)), MCMC)],multivariate=F) ###Parameters
 mean(blah[[1]][,2]>1.01)
 
 ###xiH = horizontal accountability
@@ -78,8 +96,13 @@ acc$v2x_diagacc_osp_codelow <- pxi68[,1]
 acc$v2x_diagacc_osp_codehigh <- pxi68[,2]
 
 out <- list()
-out[["v2x_diagacc"]]$cy <- acc
-out[["v2x_diagacc"]]$hmodel <- hmodel
-write_file(out, file.path("out", "v2x_diagacc" %^% "_" %^%
+out[[NAME]]$cy <- acc
+out[[NAME]]$mcmc_posteriors <- hmodel
+out[[NAME]]$ITER <- ITER
+out[[NAME]]$model_code <- paste0(readLines(model_path), collapse = "\n")
+
+
+write_file(out, file.path("out", NAME %^% "_" %^%
         Sys.getenv("SLURM_JOB_ID") %^% ".rds"))
-print("Finished calculation :)")
+
+info("Finished!")

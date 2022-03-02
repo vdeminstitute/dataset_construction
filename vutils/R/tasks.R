@@ -10,7 +10,7 @@ load_task_file <- function(variable, module, ROOT = Sys.getenv("ROOT_DIR"), db =
     stopifnot(ROOT != "") 
     tasks <- load_tasks(db)
     tasks %>% dplyr::filter(module_name == module, question_name == variable) %$% 
-        task_id %>% vutils::find_dep_file_by_task(.) %>% vutils::read_file(.)
+        task_id %>% vutils::find_dep_file_by_task(.) %>% vbase::read_file(.)
 }
 
 #' @export
@@ -23,7 +23,7 @@ load_tasks <- function(db) {
 get_globals <- function() {
     # Having both pointers is a temporary solution
     # We want to use DB in the future
-    db <<- vutils::pg_connect(Sys.getenv("DS_VERSION"))
+    db <<- vbase::pg_connect(Sys.getenv("DS_VERSION"))
     DB <<- db
     # If DEBUG is TRUE use first task_id per module in interactive mode
     if (isTRUE(as.logical(Sys.getenv("DEBUG"))) & interactive() & Sys.getenv("TASK_ID") == "") {
@@ -42,11 +42,18 @@ get_globals <- function() {
                           db = db)
     VARNAME <<- vutils::get_varname(Sys.getenv("TASK_ID"), db)
     TASK_ID <<- Sys.getenv("TASK_ID")
+	MODULE_NAME <<- Sys.getenv("MODULE_NAME")
+	print(vbase::session_info())
 }
 
 #' @export
 no_test <- function() {
-    !isTRUE(as.logical(Sys.getenv("UNIT_TESTS")))
+	bool <- !isTRUE(as.logical(Sys.getenv("UNIT_TESTS")))
+	if (!bool) {
+		db <<- vbase::pg_connect(Sys.getenv("DS_VERSION"))
+		DB <<- db
+	}
+    return(bool)
 }
 
 #' @export

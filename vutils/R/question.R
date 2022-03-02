@@ -58,3 +58,59 @@ normalize_qids <- function(ids, ttable) {
 }
 
 
+#' Display country transformations
+#'
+#' Given a vector of \code{country_ids}s, \code{country_text_ids}, and 
+#' \code{country_names} returns all other available transformations.
+#'
+#' @param countries Character or numeric vector.
+#' @param db database connection.
+#'
+#' @examples
+#' \dontrun{
+#' country_options(c(4,"USA", "South Korea"))
+#' }
+#' @export
+country_trans <- function(v, db_internal = pg_connect("vdem_data"), full = FALSE) {
+    if (!is.vector(v))
+        stop("v is not a vector.")
+    if (!(is.character(v) | is.numeric(v)))
+        stop("Wrong vector type!")
+
+    country <- dplyr::tbl(db_internal, "country") %>% dplyr::collect(n = Inf) %>%
+        dplyr::rename(country_text_id = text_id, country_name = name) %>%
+        untibble %>% 
+        dplyr::select(country_id, country_text_id, country_name) %>%
+        dplyr::filter(!is.na(country_text_id), !grepl("*", country_name, fixed = TRUE))
+
+    if (isTRUE(full))
+        return(country)
+
+    if (is.numeric(v))
+        return(country[country$country_id %in% v, ])
+
+    # We loop because we want the results to be in the same order
+    out <- lapply(v, function(i) {
+        if (grepl("^[[:digit:]]+$", i)) {
+            if (!i %in% country$country_id)
+                 info(i %^% " not found.")
+            return(country[country$country_id == as.numeric(i), ])
+        }
+
+        if (grepl("^[[:upper:]]+$", i)) {
+            if (!i %in% country$country_text_id)
+                info(i %^% " not found.")
+            return(country[country$country_text_id == i, ])
+        }
+
+        if (!i %in% country$country_name)
+            info(i %^% " not found.")
+
+        return(country[grepl(i, country$country_name), ])
+
+    }) %>% dplyr::bind_rows(.)
+
+    DBI::dbDisconnect(db_internal)
+
+    return(out)
+}

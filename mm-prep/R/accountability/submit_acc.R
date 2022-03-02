@@ -9,7 +9,7 @@ varname <- get_varname(id = Sys.getenv("TASK_ID"), db)
 check_direct_deps(id = Sys.getenv("TASK_ID"), db)
 
 
-submit_accountability(varname, timeout = "96:00:00", hpc = "XXXXXX")
+submit_accountability(varname, timeout = "120:00:00", hpc = "XXXXX")
 info("waiting...")
 Sys.sleep(3)
 

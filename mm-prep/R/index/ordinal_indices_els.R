@@ -1,13 +1,5 @@
 #!/usr/bin/env Rscript
 
-# ==========================================================================
-# Ordinalize indices.
-#
-# Start with the election ones first, since there are extra 3C/4C
-# cleaning rules. Unfortunately, this means that we can't simply use
-# our ordinalize functions, instead create macros that will be
-# evaluated within the context of transmute.
-# ==========================================================================
 options(warn = 2)
 
 suppressMessages(library(vutils))

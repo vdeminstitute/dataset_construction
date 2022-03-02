@@ -25,6 +25,7 @@ db <- pg_connect(Sys.getenv("DS_VERSION"))
 ROOT <- Sys.getenv("ROOT_DIR")
 ROOTDIR <- ROOT
 DIR       <- file.path(ROOTDIR, "dataset")
+STATA_DIR <- file.path(ROOTDIR, "dataset_stata")
 REFS      <- file.path(ROOTDIR, "refs")
 VERSION <- Sys.getenv("DS_VERSION")
 tasks <- tbl(db, in_schema("pipe", "make")) %>% collect(n = Inf)
@@ -32,12 +33,14 @@ deps <- tasks %>% filter(question_name == "dataset") %$% deps %>%
     strsplit(",") %>% unlist %>% as.numeric
 stopifnot(length(deps) == length(unique(deps)))
 
+
 # Load and adjust references
 #-------------------------------------------------------------------------------
 qtable <-
     read_file(file.path(REFS, "question_table.rds")) %>%
     filter(!(conthistmerge == "merge" & grepl("^v3", name))) %>%
     filter(!grepl("approval", datarelease))
+qtable %<>% filter(!grepl("_covid$", name))
 
 
 codebook <-
@@ -51,7 +54,6 @@ utable <- read_file(file.path(REFS, "country_unit.rds"))
 country   <- read_file(file.path(ROOT, "refs", "country_table.rds"))
 ctable <- country
 
-###
 vdem <- c("id", "x1", "x2",
           "elGeneral", "elSuffrage", "elQualities", "elOutcomes",
           "elPresidential", "elLower", "elSubnational",
@@ -66,7 +68,7 @@ vdem <- c("id", "x1", "x2",
           "sv", "cs", "me", "pe",
           "exlSocgroup", "exlGender", "exlUrban", "exlPolitical", "exlSocial",
           "leg",
-          "ca_pk", "ca_mob", "ca_eng", "ca_ac", "covid",
+          "ca_pk", "ca_mob", "ca_eng", "ca_ac",
           "histel", "histps", "histex", "histlg", "histju", "histcl", "histst",
           "histpe", "hist", "histover")
 x3_sections <-
@@ -86,6 +88,7 @@ qtable %<>%
                           stringsAsFactors = F),
                by = c("cb_section" = "cb"))
 
+
 qtable %<>%
     left_join_(codebook[, c("question_id", "question_number")],
                by = "question_id")
@@ -95,6 +98,7 @@ qtable$name[qtable$name == "v2histname"] <- "histname"
 
 # Set variable labels
 #-------------------------------------------------------------------------------
+
 qlabels <- qtable %>%
     filter(is.na(class) | class != "V") %>%
     select(question_id, name, codebook_name) %>%
@@ -108,6 +112,10 @@ qlabels <- qtable %>%
     mutate(codebook_name = ifelse(name == "v2stfisccap",
                           "State fiscal source of revenue", codebook_name)) %>%
     rename(label = codebook_name)
+
+qlabels %<>% mutate(label = ifelse(name == "e_uds_median", 
+	"Unified democracy score posterior",
+	label))
 
 qtable %<>% filter(name != "histname")
 
@@ -125,11 +133,12 @@ fu <- function(v) {
     out <- list()
     # read file
     tryCatch({
-        ll <- read_file(find_dep_file_by_task(v, ""))
+        ll <- read_file(find_dep_file_by_task(v))
     }, error = function(err) {
         print("failed to load task: " %^% v)
         return(NULL)
     })
+
     
     # extract cd and cy
     lapply(c("cd", "cy"), function(lev) {
@@ -169,12 +178,15 @@ fu <- function(v) {
 }
 
 
+
+
 # list of cd and cy objects
 llf <- mclapply(deps, fu, mc.cores = 6, mc.preschedule = FALSE)
 # extract cd data.frames:
 cd_files <- lapply(llf, function(ll) {return(ll[["cd"]])})
 # extract cy data.frames:
 cy_files <- lapply(llf, function(ll) {return(ll[["cy"]])})
+
 
 # Remove NAs
 bool <- lapply(cd_files, is.null) %>% unlist
@@ -206,16 +218,21 @@ tasks %>%
 cy_files <- cy_files[!bool]
 df_cy <- full_join_vdem_tree(cy_files)
 
-write_file(llf, "~/data/ds_construction/2021_02/llf.rds")
+write_file(llf, file.path(ROOTDIR, "llf", "llf.rds"), dir_create = TRUE)
+write_file(df_cy, file.path(ROOTDIR, "llf", "df_cy.rds"), dir_create = TRUE)
+write_file(df_cd, file.path(ROOTDIR, "llf", "df_cd.rds"), dir_create = TRUE)
+
+
 
 rm(llf)
 rm(cy_files)
 rm(cd_files)
 
 
-# clean loaded files
+# Clean loaded files
 #-------------------------------------------------------------------------------
 
+# 
 clean_process <- function(df) {
     print(names(df)[duplicated(names(df))])
     print(grep(".", names(df), fixed = TRUE, value = TRUE))
@@ -249,6 +266,25 @@ df_cy <- df_cy %>%
 df_cd <- df_cd %>%
     semi_join(utable, by = c("country_id", "year"))
 
+bad_vars <- qtable %>% 
+	filter(class == "C", grepl("^v2reg", name),
+	       !to_dichotomize) %$% name
+stopifnot(grepl("^v2reg", bad_vars))
+stopifnot(isTRUE(!anyNA(df_cd$year)))
+stopifnot(isTRUE(!anyNA(df_cy$year)))
+lapply(bad_vars, function(v) {
+	info("Cleaning: " %^% v)
+	vars <- find_vars(v, qtable)
+	df_cd[df_cd$year == 2021, vars] <<- NA
+	df_cy[df_cy$year == 2021, vars] <<- NA
+	return(NULL)
+}) %>% invisible
+stopifnot(is.na(df_cd[df_cd$year == 2021, c("v2regoppgroupsact_0", "v2regoppgroupsact_nr")]))
+stopifnot(is.na(df_cy[df_cy$year == 2021, c("v2regoppgroupsact_0", "v2regoppgroupsact_nr")]))
+stopifnot(any(!is.na(df_cd[df_cd$year == 2021, "v2clacfree_osp"])))
+stopifnot(any(!is.na(df_cy[df_cy$year == 2021, "v2clacfree_osp"])))
+
+
 # Calculate Identifiers
 #-------------------------------------------------------------------------------
 
@@ -278,7 +314,8 @@ idents_df <-
                                project == "overlap" ~ 2)) %>%
     ungroup
 
-# Calculate gaps.
+
+# Calculate gaps. Dear God this is horrible.
 gaps_df <- select(utable, country_id, year) %>%
     group_by(country_id) %>%
     arrange(year) %>%
@@ -312,14 +349,15 @@ df_cd %<>%
 
 # Merge e-data into cy
 #-------------------------------------------------------------------------------
-e_data <- read_file(file.path(ROOT, "external", "e_data.rds"))
+e_data <- read_file(file.path(ROOT, "external", "e_data.rds")) %>%
+	rename(e_uds_median = e_uds)
 stopifnot(no_duplicates(e_data, c("country_id", "year")))
 df_cy %<>% left_join(e_data, by = c("country_id", "year"))
 df_cd %<>% left_join(select(e_data, country_id, year, COWcode),
                      by = c("country_id", "year"))
 
 
-# Round values and set NaN to NA
+# Round values to third digit
 #-------------------------------------------------------------------------------
 fu <- function(v) {
     if (is.numeric(v) & class(v)[1] != "Date") {
@@ -328,10 +366,12 @@ fu <- function(v) {
         v
     }
 }
-
 df_cy[, ] <- lapply(df_cy, fu)
 df_cd[, ] <- lapply(df_cd, fu)
 
+
+# Set NaN to NA
+#-------------------------------------------------------------------------------
 is.na(df_cy) <- is.na(df_cy)
 is.na(df_cd) <- is.na(df_cd)
 
@@ -339,7 +379,7 @@ is.na(df_cd) <- is.na(df_cd)
 # Compare datasets
 #-------------------------------------------------------------------------------
 if (interactive()) {
-    ds_old <- read_file("~/data/datasets/v10/Country_Year_V-Dem_Full+others_R_v10/V-Dem-CY-Full+Others-v10.rds")
+    ds_old <- read_file("~/data/ds_construction/v11/dataset/V-Dem-CY-Full+Others/V-Dem-CY-Full+Others-v11.1.rds")
     # what is in new but not in old?
     setdiff(names(df_cy), names(ds_old)) %>% sort
     # What is in old but not in new?
@@ -362,7 +402,7 @@ stopifnot(is_vdem_sorted(df_cd))
 #-------------------------------------------------------------------------------
 info("V-Dem-CY-Core")
 dir.create(file.path(DIR, "V-Dem-CY-Core"), recursive = T, showWarnings = F)
-dir.create(file.path(DIR, "STATA_temp"), recursive = T, showWarnings = F)
+dir.create(STATA_DIR, recursive = T, showWarnings = F)
 
 # Select columns
 indices <-
@@ -394,7 +434,8 @@ if (length(missvar) > 1)
 df_country_year_core <-
     df_cy %>%
     select(one_of(identifiers), one_of(cy_core_vars))
-info(sprintf("CY rows: %d, cols: %d", nrow(df_cy), ncol(df_cy)))
+info(sprintf("CY rows: %d, cols: %d", 
+	nrow(df_country_year_core), ncol(df_country_year_core)))
 
 # Set labels
 cy_labels <- colnames(df_country_year_core) %>% to_qlabels(qlabels)
@@ -413,8 +454,7 @@ fork2 <- mcparallel({
     info("Creating CSV CY")
     write_file(df_country_year_core,
                file.path(DIR, "V-Dem-CY-Core",
-                         "V-Dem-CY-Core-" %^% VERSION %^% ".csv"),
-               row.names = F)
+                         "V-Dem-CY-Core-" %^% VERSION %^% ".csv"))
 })
 
 # SPSS
@@ -429,7 +469,7 @@ fork3 <- mcparallel({
 fork4 <- mcparallel({
     info("Creating Stata CY")
     write_file(set_stata_labels(df_country_year_core, cy_labels),
-               file.path(DIR, "STATA_temp",
+               file.path(STATA_DIR,
                          "V-Dem-CY-Core-" %^% VERSION %^% ".dta"),
                version = 118,
                data.label = "V-Dem-CY-Core")
@@ -466,8 +506,14 @@ info(sprintf("CY-Full+Others rows: %d, cols %d",
              nrow(cy_others.df), ncol(cy_others.df)))
 
 # Labels
-others_labels <- colnames(cy_others.df) %>% to_qlabels(qlabels)
-
+others_labels <- colnames(cy_others.df) %>% 
+	gsub("e_uds_mean", "e_uds_median", ., fixed = TRUE) %>%
+	gsub("e_uds_pct025", "e_uds_median", ., fixed = TRUE) %>%
+	gsub("e_uds_pct975", "e_uds_median", ., fixed = TRUE) %>%
+	gsub("e_gdp_sd", "e_gdp", ., fixed = TRUE) %>%
+	gsub("e_gdppc_sd", "e_gdppc", ., fixed = TRUE) %>%
+	gsub("e_pop_sd", "e_pop", ., fixed = TRUE) %>%
+	to_qlabels(qlabels)
 
 # rds
 fork6 <- mcparallel({
@@ -482,8 +528,7 @@ fork7 <- mcparallel({
     info("Creating CSV CY-Full+Others")
     write_file(cy_others.df,
                file.path(DIR, "V-Dem-CY-Full+Others",
-                         "V-Dem-CY-Full+Others-" %^% VERSION %^% ".csv"),
-               row.names = F)
+                         "V-Dem-CY-Full+Others-" %^% VERSION %^% ".csv"))
 })
 
 # SPSS
@@ -498,7 +543,7 @@ fork8 <- mcparallel({
 fork9 <- mcparallel({
     info("Creating Stata CY-Full+Others")
     write_file(set_stata_labels(cy_others.df, others_labels),
-               file.path(DIR, "STATA_temp",
+               file.path(STATA_DIR,
                          "V-Dem-CY-Full+Others-" %^% VERSION %^% ".dta"),
                version = 118,
                data.label = "V-Dem CY-Full+Others")
@@ -552,8 +597,7 @@ fork10 <- mcparallel({
 fork11 <- mcparallel({
     info("Creating CSV CD")
     write_file(cd.df,
-               file.path(DIR, "V-Dem-CD", "V-Dem-CD-" %^% VERSION %^% ".csv"),
-               row.names = F)
+               file.path(DIR, "V-Dem-CD", "V-Dem-CD-" %^% VERSION %^% ".csv"))
 })
 
 # SPSS
@@ -567,7 +611,7 @@ fork12 <- mcparallel({
 fork13 <- mcparallel({
     info("Creating Stata CD")
     write_file(set_stata_labels(cd.df, cd_labels),
-               file.path(DIR, "STATA_temp", "V-Dem-CD-" %^% VERSION %^% ".dta"),
+               file.path(STATA_DIR, "V-Dem-CD-" %^% VERSION %^% ".dta"),
                version = 118,
                data.label = "V-Dem CD")
 })

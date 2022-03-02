@@ -122,14 +122,13 @@ output$model_code <- get_stancode(posterior.sim)
 output$model_input <- data
 output$script_input <- model_input
 output$country_dates <- country_dates
-output$country_date_translation <- country_date_translation 
+output$country_date_translation <- country_date_translation
 output$coder_translation <- coder_translation
 output$main_country_translation <- main_country_translation
 output$missing <- ll$missing
 output$ITER <- ITER
 output$R_SEED <- R_SEED
 output$STAN_SEED <- STAN_SEED
-
 
 pars <- c("Z",        # Estimated latent variable
           "gamma_mu", # Universial thresholds
@@ -139,10 +138,12 @@ pars <- c("Z",        # Estimated latent variable
 
 ###
 # Before we start summarising and creating our different variable
-# versions, check convergence (mean(Rhat > 1.01) <= 0.05)
+pars_conv <- vector(mode = "list", length = length(pars)) %>% setNames(pars)
+
 for (p in pars) {
     Rhat <- summary(posterior.sim, pars = p)$summary[, "Rhat"]
     stat <- mean(Rhat > 1.01)
+    pars_conv[[p]] <- list(stat = stat, Rhat = Rhat)
 
     if (!stat <= 0.05) {
         warn("Convergence failed for: " %^% paste0(p, ":") %^% stat)
@@ -152,8 +153,6 @@ for (p in pars) {
 ###
 # Extract each parameter as a matrix for later use.
 pars.matrices <- lapply(pars, function(p) {
-    # Keep this for debugging purposes. Seriously, you really want
-    # this info in your log files.
     sprintf("Extracting %s", p) %>% info
 
     m <- as.matrix(posterior.sim, pars = p)
@@ -230,6 +229,9 @@ for (type in c("post.summary", "osp", "ord")) {
 # Generate beta summaries for the disaggregated dataset
 ####
 output$b.summary <- b_summary(pars.matrices$beta)
+
+# Save convergence statistics
+output$convergence_stats <- pars_conv
 
 # Fix columns
 ###

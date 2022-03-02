@@ -24,36 +24,20 @@ qtable <-
 
 # Assertions
 stopifnot(all(qtable$rating))
-v <- qtable$question_id
-
-# Check for which vignettes we have no data
-df <- DBI::dbGetQuery(db_data, "SELECT DISTINCT question_id FROM rating;")
-length(v)
-# Remove vignette questions for which we have no data
-v <- v[v %in% df$question_id]
-v <- sort(v)
-length(v)
+qids <- qtable$question_id %>%
+    paste0(collapse = ", ")
 
 # download vignettes
 info("Downloading vignettes, please wait....")
+query <- "SELECT * FROM rating WHERE question_id in (" %^% qids %^% ");"
 
-ll <- parallel::mclapply(v, function(vv) {
-    db_data_internal <- pg_connect(Sys.getenv("DOWNLOAD_DB"))
-    info("Donwloading vignette with question_id: " %^% vv)
-    df_download <-
-        DBI::dbGetQuery(db_data_internal,
-	        paste0("SELECT * FROM rating WHERE question_id = ", vv, ";"))
-    DBI::dbDisconnect(db_data_internal)
-    if (nrow(df_download) == 0) {
-        info("Data missing for vignette: " %^% vv)  
-        return(NULL)
-    }
-    df_download %>%
-        mutate(default_id = NA_integer_) %>%
-        return(.)
-}, mc.cores = 6)
-df_download <- bind_rows(ll)
 
+df_download <- DBI::dbGetQuery(db_data, query) %>%
+    mutate(default_id = NA_integer_)
+
+v_miss <- setdiff(qtable$question_id, df_download$question_id)
+info("Data missing for vignettes: ")
+print(qtable %>% filter(question_id %in% v_miss) %$% name)
 
 df <-
     df_download %>%

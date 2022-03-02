@@ -23,7 +23,6 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = TRUE)
     info("Done splitting file for " %^% VARNAME)
 } else {
-	# Call unit tests for main function and sub functions
     testthat::test_file("~/proj/mm-prep/tests/init/test_split_file.R")
 }
 update_task_status(db = DB)

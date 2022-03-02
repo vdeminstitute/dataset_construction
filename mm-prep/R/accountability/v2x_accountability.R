@@ -3,9 +3,30 @@ library(runjags)
 library(rjags)
 library(parallel)
 
+sessionInfo()
+
+NAME <- "v2x_accountability"
+ITER <- 500L
+BURNIN <- 5000L
+THIN <- 20L
+MCMC <- 2000L
+WARMUP <- 5000L
+CHAINS <- 8L
+
+
+# Load Data
 acc <- readRDS(file.path("input", "acc_input.rds"))
+stopifnot(nrow(acc) != 0)
 model_path <- file.path("jags", "accountability_MM.txt")
 out_path <- file.path("out")
+
+# Report some info
+info("START: " %^% Sys.time())
+info("NAME: " %^% NAME)
+info("INFILE: " %^% file.path("input", "acc_input.rds"))
+info("OUTDIR: " %^% out_path)
+info("ITER: " %^% ITER)
+
 
 ###analysis
 hmod <- list(
@@ -30,24 +51,32 @@ hmod <- list(
   yP = cbind(acc$v2psparban, acc$v2psbars, acc$v2psoppaut)
 )
 
-
 mon <- c("betaCS", "tauCS", "tauC", "betaMV", "tauMV", "tauM", "betaFE", "tauFE", "tauF",
   "betaES", "tauES",  "betaLC", "tauLC", "betaL", "betaJC", "tauJC", "tauJ", "betaIB", "tauIB",
   "betaEC", "tauEC","betaEV", "tauEV", "betaER", "betaPE", "tauPE", "betaP",
   "tauPP", "tauP", "tauSocial", "tauHorizontal", "tauVertical", "xi")
 
+sprintf("%d runs with %d sampling iterations, %d burnin, and %d thin",
+        ITER, MCMC, BURNIN, THIN) %>% info
+
+sprintf("Found %d total obs", nrow(acc)) %>% info
+
+
 hmodel <- run.jags(method = "parallel", model = model_path,
-  monitor = mon, data = hmod, n.chains = 8,
+  monitor = mon, data = hmod, n.chains = CHAINS,
   inits = list(xi = 2 * acc$v2x_elecreg - 1),
-  adapt = 5000, burnin = 5000, sample = 500, thin = 20,
+  adapt = 5000, burnin = BURNIN, sample = ITER, thin = THIN,
   summarise = FALSE, plots = FALSE, modules = c("glm", "lecuyer"))
 
+info("JAGS models finished")
+
+###
 cds <- as.mcmc.list(hmodel)
 
 ###check for convergence using gelman diagnostics
 gelman.diag(cds[,1:111]) ###Parameters
-blah <- gelman.diag(cds[, sample(112:(111 + nrow(acc)), 2000)], multivariate = FALSE) ###Parameters
-mean(blah[[1]][, 2] > 1.01)
+blah <- gelman.diag(cds[, sample(112:(111 + nrow(acc)), MCMC)], multivariate = FALSE) ###Parameters
+info("Proportion of R hat above 1.01: " %^% mean(blah[[1]][, 2] > 1.01))
 
 ###normalize posterior draws with this function
 
@@ -77,9 +106,15 @@ acc$v2x_accountability_osp_codelow <- pxi68[, 1]
 acc$v2x_accountability_osp_codehigh <- pxi68[, 2]
 
 out <- list()
-out[["v2x_accountability"]]$cy <- acc
-out[["v2x_accountability"]]$hmodel <- hmodel
-write_file(out, file.path(out_path,
-    "v2x_accountability" %^% "_" %^% Sys.getenv("SLURM_JOB_ID") %^% ".rds"))
+out$cy <- acc
+out$mcmc_posteriors <- hmodel
+out$ITER <- ITER
+out$model_code <- paste0(readLines(model_path), collapse = "\n")
 
-print("Finished calculation :)")
+output <- list()
+output[[NAME]] <- out
+
+write_file(output, file.path(out_path,
+    NAME %^% "_" %^% Sys.getenv("SLURM_JOB_ID") %^% ".rds"))
+
+info("Finished!")

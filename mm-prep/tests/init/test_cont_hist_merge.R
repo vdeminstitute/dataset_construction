@@ -50,8 +50,8 @@ df <- merge_ref_tables(df, qtable, country_unit, country)
 test_that("", {
 	expect_error(data_checks(data.frame()))
 	expect_error(data_checks(cbind(df[, -15], project = c(NA, "p", "p", "p"))))
-	expect_error(data_checks(cbind(df[,c(-13, -15)], class = c("A", "A", "A", "A"), 
-		project = c("overlap", "contemporary", "overlap", "overlap"))))
+	#expect_error(data_checks(cbind(df[,c(-13, -15)], class = c("A", "A", "A", "A"), 
+	#	project = c("overlap", "contemporary", "overlap", "overlap"))))
 	expect_error(data_checks(cbind(df[,-14], name = c("help", "v2help", "v3help", "v33help"))))
 	})
 
@@ -176,3 +176,4 @@ test_that("lgbicam_recoding", {
 		"v2lgbicam"
 		), data.frame(question_id = c(595, 595), code = c(0, 2)))
 })
+

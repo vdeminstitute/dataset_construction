@@ -40,6 +40,22 @@ collect_last <- function(v) {
         v[1]
 }
 
+#' @describeIn collect_aggregation Aggregate by first
+#' @export
+collect_first <- function(v) {
+    if (length(v) == 1)
+        return(v)
+
+    v[v == ""] <- NA
+
+    if (any(!is.na(v)))
+        utils::head(stats::na.omit(v), n = 1)
+    else
+        v[1]
+}
+
+
+
 #' @describeIn collect_aggregation Aggregate by mean
 #' @export
 collect_mean <- function(v) {
@@ -74,62 +90,17 @@ collect_mean <- function(v) {
 #' @export
 day_mean <- function(x, dates, na_rm = T) UseMethod("day_mean" )
 
-#' Apply a function per group and combine results
-#'
-#' Simple wrapper around the conventional split-lapply-unsplit pattern
-#' that, unlike \code{\link{by}}, returns a combined object.
-#'
-#' @param x An R object, either \code{data.frame} or \code{matrix}
-#' @param factors Factor or list of factors passed to
-#'     \code{\link{split}} and \code{\link{unsplit}}
-#' @param fn Function to apply to each group
-#' @param mc.cores Number of cores to use as parallel jobs.
-#' @param ... Additional arguments passed to
-#'     \code{\link[parallel]{mclapply}}
-#'
-#' @section Warning: \code{by_split} assumes that the subsets returned
-#'     by the function \code{f} are of the same class as the
-#'     original object.
-#'
-#' @return Object of same class as \code{x}.
-#'
-#' @examples
-#' df <- data.frame(x = c(1, 1, 2, 2), y = c(1, NA, NA, 4))
-#' by_split(df, df$x, locf)
-#'
 #' @export
-by_split <- function(x, factors, fn, mc.cores = 1, ...) {
-    if (class(fn) != "function")
-        stop("Invalid function")
-
-    UseMethod("by_split")
+day_mean.numeric <- function(x, dates = NULL) {
+	day_mean(as.matrix(x), dates = dates)
 }
 
 #' @export
-by_split.matrix <- function(x, factors, fn, mc.cores = 1, ...) {
-    ll <- split.data.frame(x, factors) %>%
-        parallel::mclapply(fn, mc.cores = mc.cores, ...)
-
-    mc_assert(ll)
-    names(ll) <- NULL
-
-    do.call(rbind, ll)
+day_mean.integer <- function(x, dates = NULL) {
+	day_mean(as.matrix(x), dates = dates)
 }
 
-#' @export
-by_split.data.frame <- function(x, factors, fn, mc.cores = 1, ...) {
-    ll <- split(x, factors) %>%
-        parallel::mclapply(fn, mc.cores = mc.cores, ...)
 
-    mc_assert(ll)
-    names(ll) <- NULL
-    len <- vapply(ll, nrow, numeric(1)) %>% sum
-
-    if (len == nrow(x))
-        unsplit(ll, factors)
-    else
-        do.call(rbind, ll)
-}
 
 #' Year-wise day-weighted aggregation
 #'
@@ -228,9 +199,13 @@ cy.day_mean.data.frame <- function(x, dates = NULL, by = NULL, ...) {
     aggregated.df[[deparse(substitute(by))]] <- bynames
     row.names(aggregated.df) <- NULL
 
+	# These next lines seems useless, but otherwise there is a bug in numeric values
+	# being slightly different from integer values (e.g. 29.000001 vs. 29) and would not match.
+	# This is a problem passed from C++ using Rcpp.
     if ("country_id" %in% names(aggregated.df) & class(aggregated.df$country_id) == "numeric") {
         aggregated.df[["country_id"]] <- as.numeric(as.integer(aggregated.df[["country_id"]]))
     }
 
     aggregated.df
 }
+

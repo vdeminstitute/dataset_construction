@@ -32,7 +32,7 @@ write_file(df, file.path(ROOT, "stata/structure_of_executives_input.dta"),
 
 # Run STATA script
 home <- Sys.getenv("HOME")
-system("cd " %^% home %^% "/proj/mm-prep/do/ && " %^% "/usr/local/stata/stata-se -b do structure_of_executives.do")
+system("cd " %^% home %^% "/proj/mm-prep/do/ && " %^% "~/stata/stata-se -b do structure_of_executives.do")
 # Let's read the log file and print it so that it goes to the log table.
 d <- readLines(home %^% "/proj/mm-prep/do/structure_of_executives.log")
 # Remove lines concerning license
@@ -42,7 +42,7 @@ print(shQuote(d))
 
 # Also check log file for error messages and send status error
 # STATA will return some error code e.g. r(199) if an error occurs
-if (any(grepl("r(", d, fixed = T))) {
+if (any(grepl("r(", d, fixed = T)) | any(grepl("expired", d))) {
     stop("structure_of_executives failed!")
 }
 

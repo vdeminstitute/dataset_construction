@@ -23,7 +23,7 @@ d <- readLines(logs)
 
 print(shQuote(d))
 
-if (any(grepl("Finished calculation :)", d, fixed = TRUE)) &
+if (any(grepl("Finished!", d, fixed = TRUE)) &
         length(infile) == 1) {
     ll <- read_file(infile)
     ll$logs <- d

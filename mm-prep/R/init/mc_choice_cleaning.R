@@ -71,6 +71,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = T)    
     info("Done with mc_choice_cleaning...")
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/init/test_mc_choice_cleaning.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_mc_choice_cleaning.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

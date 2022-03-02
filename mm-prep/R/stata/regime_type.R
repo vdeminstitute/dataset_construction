@@ -52,8 +52,8 @@ write_file(df, file.path(ROOT, "stata/regime_type_input.dta"),
 # Run STATA script
 ##----------------------------------------------------------------
 home <- Sys.getenv("HOME")
-system("cd " %^% home %^% "/proj/mm-prep/do/ && /usr/local/stata/stata-se -b do regime_type.do")
-# read and print STATA log output
+system("cd " %^% home %^% "/proj/mm-prep/do/ && ~/stata/stata-se -b do regime_type.do")
+# Read and print STATA log output
 d <- readLines(home %^% "/proj/mm-prep/do/regime_type.log")
 # Remove lines concerning license
 d <- d[-(1:21)]
@@ -62,7 +62,7 @@ print(shQuote(d))
 
 # Also check log file for error messages and send status error
 # STATA will return some error code e.g. r(199) if an error occurs
-if (any(grepl("r(", d, fixed = T))) {
+if (any(grepl("r(", d, fixed = T)) | any(grepl("expired", d))) {
     stop("regime_type failed!")
 }
 
@@ -71,10 +71,6 @@ if (any(grepl("r(", d, fixed = T))) {
 
 df <- read_file(file.path(ROOT, "stata/regime_type_output.dta"),
                 convert.factors = F)
-
-# Regimes of the World! Merge this after our stage files since it has
-# to be run manually with Stata so it won't exist on the first
-# invocation of `base.R`.
 
 df %<>%
     mutate(v2x_regime = case_when(
@@ -99,7 +95,6 @@ df %<>%
 df %<>% filter(year >= 1900)
 
 out <- list()
-out[["v2x_regime_calc"]]$cy <- df
-
+out[["v2x_regime"]]$cy <- df
 write_file(out, OUTFILE, dir_create = T)
 update_task_status(db = db)

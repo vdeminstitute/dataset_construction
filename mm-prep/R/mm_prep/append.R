@@ -485,6 +485,7 @@ if (no_test()) {
     setNames(list(do.call(main, collectedInput)), VARNAME) %>%
         write_file(., OUTFILE, dir_create = TRUE)
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/mm_prep/append_tests.R")
+    testthat::test_file("~/proj/mm-prep/tests/mm_prep/test_append.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

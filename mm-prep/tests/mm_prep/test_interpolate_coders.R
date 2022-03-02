@@ -178,4 +178,3 @@ test_that("only interpolate_across_years works,
 	testthat::expect_equal(interpolate_across_years(df), out)
 	testthat::expect_equal(interpolate_steps(df), out)
 	})
-

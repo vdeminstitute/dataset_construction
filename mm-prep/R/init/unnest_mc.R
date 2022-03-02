@@ -79,6 +79,7 @@ if (no_test()) {
     info("Done with unnesting multiple categories for " %^% VARNAME)
 } else {
     # Tests
-    testthat::test_file("~/proj/mm-prep/tests/init/test_unnest_mc.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_unnest_mc.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

@@ -12,6 +12,9 @@ varname <- get_varname(id = Sys.getenv("TASK_ID"), db)
 VARNAME <- varname
 check_direct_deps(id = Sys.getenv("TASK_ID"), db)
 
+# Check if directory is mounted to HPC
+stopifnot(is_path_mounted())
+
 ITER_OVERRIDE <- as.integer(Sys.getenv("ITER"))
 ITER_OVERRIDE <- ifelse(is.na(ITER_OVERRIDE), FALSE, ITER_OVERRIDE)
 
@@ -82,13 +85,12 @@ if (any(df$status == "converged") | as.logical(ITER_OVERRIDE) | MM_OVERRIDE) {
 
 max_iter <-
     df %>%
-    filter(!status %in% c("cancelled", "error")) %>%
     mutate(iter = as.integer(iter)) %$% max(iter)
 stopifnot(`Cannot get iteration count...` = !is.na(max_iter))
 
-# If all jobs for this variable failed or have warning then
-# resubmit at higher iterations
-if (all(df$status %in% c("failed", "warning", "cancelled", "error")) | 
+
+if (all(df$status %in% c("failed", "cancelled", 
+						 "error", "timed_out")) | 
         (MIN_ITERATION > max_iter)) { 
     
 } else {
@@ -100,28 +102,28 @@ if (all(df$status %in% c("failed", "warning", "cancelled", "error")) |
 info(VARNAME %^% " submit at higher iteration!")
 
 if (max_iter == 10000L) {
-    mm_submit_XXXXXX_job(variable = varname,
+    mm_submit_XXXX_job(variable = varname,
                             iter = 20000L,
-                            timeout = "160:00:00",
+                            timeout = "48:00:00",
                             directory = Sys.getenv("MM_DIR"))
 }
 
 if (max_iter == 20000L) {
-    mm_submit_XXXXXX_job(variable = varname,
+    mm_submit_XXXX_job(variable = varname,
                             iter = 40000L,
-                            timeout = "160:00:00",
+                            timeout = "90:00:00",
                             directory = Sys.getenv("MM_DIR"))
 }
 
 if (max_iter == 40000L) {
-    mm_submit_XXXXXX_job(variable = varname,
+    mm_submit_XXXX_job(variable = varname,
                             iter = 80000L,
-                            timeout = "160:00:00",
+                            timeout = "120:00:00",
                             directory = Sys.getenv("MM_DIR"))
 }
 
 if (max_iter == 80000L) {
-    mm_submit_XXXXXX_job(variable = varname,
+    mm_submit_XXXX_job(variable = varname,
                             iter = 200000L,
                             timeout = "160:00:00",
                             directory = Sys.getenv("MM_DIR"))

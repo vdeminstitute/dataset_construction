@@ -85,6 +85,7 @@ if (no_test()) {
     info("Done with calculating means for " %^% VARNAME)
 } else {
     # Call unit tests for main function and sub functions
-    testthat::test_file("~/proj/mm-prep/tests/mm-prep/raw_mean_tests.R")
+    testthat::test_file("~/proj/mm-prep/tests/mm_prep/test_raw_mean.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

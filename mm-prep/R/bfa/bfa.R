@@ -103,6 +103,7 @@ gelman <- split(posteriors, cuts) %>%
 g <- gelman$psrf
 for (p in c("xi", "gamma...1", "gamma...2", "omega")) {
     if (!mean(g[grepl(p, rownames(g)), 1] > 1.1) <= .05) {
+
         warn("Convergence check failed for " %^% p)
         info("Proportion above 1.1: " %^% mean(g[grepl(p, rownames(g)), 1] > 1.1))
     }
@@ -110,6 +111,7 @@ for (p in c("xi", "gamma...1", "gamma...2", "omega")) {
 
 output <- list()
 output$mcmc_posteriors <- posteriors
+output$gelman <- g
 output$R_SEED <- R_SEED
 output$ITER <- ITER
 

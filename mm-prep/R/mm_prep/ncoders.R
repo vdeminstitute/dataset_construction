@@ -47,6 +47,7 @@ country_year_nr <- function(m) {
              substr(rownames(m), 5, 8)), drop = TRUE)
     
     res <- lapply(m_split, function(lll) {
+        # lll <- m_split[["BOL.2019"]]
         if (nrow(lll) == 1)
             return(rowSums(lll))
         tempres <- matrix(colSums(lll), nrow = 1)
@@ -100,6 +101,7 @@ if (no_test()) {
 
 } else {
     # Call unit tests for main function and sub functions
-    testthat::test_file("~/proj/mm-prep/tests/mm_prep/ncoders_tests.R")
+    testthat::test_file("~/proj/mm-prep/tests/mm_prep/test_ncoders.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

@@ -38,13 +38,23 @@ update_task_status_no_timestamp <- function(status = "done",
 
 #'@export
 pg_update_timestamp <- function(id, db) {
-    pg_send_query(db, "UPDATE pipe.make SET ts = NOW() WHERE task_id = " %^% id %^% ";")
+    vbase::pg_send_query(db, "UPDATE pipe.make SET ts = NOW() WHERE task_id = " %^% id %^% ";")
 }
 
 #' @export
 pg_update_many_timestamps <- function(task_ids, db) {
     for (task_id in task_ids) {
-        pg_update_timestamp(task_id, db)
+        vbase::pg_update_timestamp(task_id, db)
         Sys.sleep(1)
     }
+}
+
+#'@export
+pg_update_var <- function(df, name, db) {
+    qids <- unique(df$question_id)
+    stopifnot(length(qids) == 1)
+    vbase::pg_send_query(db,
+        "DELETE FROM " %^% name %^% " " %^%
+        "WHERE question_id = " %^% qids %^% ";")
+    vbase::pg_append_table(df, name, db)
 }

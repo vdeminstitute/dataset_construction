@@ -7,6 +7,9 @@ find_vars <- function(vari, qtable) {
     if (vari == "e_regionpol_6C")
         return("e_regionpol_6C")
 
+	if (vari == "e_uds_median")
+		return(c("e_uds_median", "e_uds_mean", "e_uds_pct025", "e_uds_pct975"))
+
     if (grepl("_\\dC$", vari)) {
         plainvar <- gsub("_\\dC", "", vari)
         return(paste0(plainvar, c("_3C", "_4C", "_5C")))
@@ -54,6 +57,8 @@ find_vars <- function(vari, qtable) {
         varis <- other_index
     } else if(df$additional_versions == "*_codelow, *_codehigh, *_sd, *_mean, *_nr") {
         varis <- percent_vars
+    } else if (grepl("^e", vari) && !is.na(df$additional_versions)) {
+        varis <- gsub("*", "", unlist(strsplit(df[, "additional_versions"], ", ")), fixed = TRUE)
     }
 
     if (!exists("varis")) {

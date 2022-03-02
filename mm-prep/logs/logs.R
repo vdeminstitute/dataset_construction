@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-# Send script stdout and stderr to database logs table.
 # Test script like this:
 # export TASK_ID=7284; export MODULE_NAME=prep_accountability; export VARIABLE=prep_accountability; zsh -c 'Rscript ./R/accountability/prep_accountability.R -- 2>&1 | tee /dev/tty | xargs -d "\n" log_postgres; echo "${pipestatus[1]}"'
 

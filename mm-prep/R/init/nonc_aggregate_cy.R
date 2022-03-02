@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 
 # ==========================================================================
+
 options(warn = 2)
 suppressMessages(library(dbplyr))
 suppressMessages(library(dplyr))
@@ -22,22 +23,27 @@ merge_ref_tables <- function(df, country) {
 find_aggregation_method <- function(qtable, VARNAME) {
     stopifnot(!is.na(VARNAME), grepl("^v[2|3]", VARNAME))
     qtable %<>% filter(name == VARNAME)
-    
+   
     max_vars <- filter(qtable,
-        (is.na(date_specific) & (!question_type %in% c("R", "T"))) |
+        (!is.na(date_specific) & (!question_type %in% c("R", "T"))) |
         (name %in% c("v3eldirelc", "v3eldireuc", "v3eldirepr")) |
         (name %~% "elecreg")) %>%
         pull(name)
-    if (length(max_vars) > 0)
+    if (length(max_vars) > 0) {
+		stopifnot(isTRUE(qtable$cy_aggregation == "Maximum"))
         return("max")
+	}
 
     ratio_vars <- filter(qtable, question_type == "R",
         index_type == "interval",
         is.na(date_specific)) %>%
         pull(name)
-    if (length(ratio_vars) > 0)
-        return("ratio")
-    
+    if (length(ratio_vars) > 0) {
+		stopifnot(isTRUE(qtable$cy_aggregation == "Day-weighted mean"))
+	    return("ratio")
+	}   
+
+	stopifnot(isTRUE(qtable$cy_aggregation == "Last"))
     return("last")
 }
 
@@ -106,6 +112,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = T)    
     info("Done with nonc_aggregate_cy...")
 } else {
-    testthat::test_file("~/proj/mm-prep/tests/init/test_nonc_aggregate_cy.R")
+    testthat::test_file("~/proj/mm-prep/tests/init/test_nonc_aggregate_cy.R") %>%
+		as.data.frame %$% stopifnot(failed == 0L)
 }
 update_task_status(db = DB)

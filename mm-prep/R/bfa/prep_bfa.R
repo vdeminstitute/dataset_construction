@@ -194,8 +194,18 @@ main <- function(objs, comps, frassoc, bfa_script, country, utable, VARNAME, qta
 		out$elecreg_cy <- objs[["v2x_elecreg"]][["v2x_elecreg"]]$cy
 	}
 
-	out$MCMC <- 12000L
-	out$THIN <- 2000L
+	# Parameters for model can differ by BFA:
+	# MCMC THIN
+	# 12000L 2000L
+	# 6000L 1000L
+	# 3000L 500L
+	if (VARNAME %in% c("v2x_rule", "v2x_neopat")) {
+		out$MCMC <- 3000L
+		out$THIN <- 500L
+	} else {
+		out$MCMC <- 12000L
+		out$THIN <- 2000L
+	}
 
 	return(out)
 }

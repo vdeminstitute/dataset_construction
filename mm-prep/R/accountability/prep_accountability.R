@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 #
-# Prep data for accountability indices.
 ###
 
 suppressMessages(library(dplyr))

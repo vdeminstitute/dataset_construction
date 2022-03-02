@@ -54,7 +54,6 @@ testthat::test_that("expected output", {
     })
 testthat::test_that("expected type", {
     testthat::expect_equal(class(interpolate_within_groups(m, c(1, 2, 2, 3)))[1], "matrix")
-    # accepts matrices as well? although the documentation says it only accepts vectors and data.frames
     })
 
 
@@ -65,21 +64,18 @@ testthat::test_that("expected type", {
 m <- matrix(c(1, 1, 2, 3, 1, 1, 3, 3), ncol = 2, byrow = FALSE)
 
 testthat::test_that("expected dim", {
-    # without dplyr::lag() this test fails if dplyr is not loaded
     testthat::expect_equal(nrow(reduce_groups(m, c(1, 1, 2, 3))), 3)
     testthat::expect_equal(ncol(reduce_groups(m, c(1, 1, 2, 3))), 2)
     })
 testthat::test_that("expected output", {
     testthat::expect_equal(reduce_groups(m, c(1, 1, 1, 2)), matrix(c(1, 1, 3, 3), ncol = 2, byrow = TRUE))
     testthat::expect_equal(reduce_groups(m, c(0, 0, 0, 1)), matrix(c(1, 1, 3, 3), ncol = 2, byrow = TRUE))
-    # it works, but should the index be negative or equal to 0?
     testthat::expect_equal(reduce_groups(m, c(-1, -1, -1, 0)), matrix(c(1, 1, 3, 3), ncol = 2, byrow = TRUE))
     testthat::expect_equal(reduce_groups(m, c(1, 2, 2, 3)), matrix(c(1, 1, 1, 1, 3, 3), ncol = 2, byrow = TRUE))
     testthat::expect_equal(reduce_groups(m, c(1, 2, 2, 2)), matrix(c(1, 1, 1, 1), ncol = 2))
     testthat::expect_error(reduce_groups(m, c(1, 2, 2, 2, 3)))
     })
 testthat::test_that("expected type", {
-    # if we don't add drop = FALSE, the output is going to be numeric
     testthat::expect_equal(class(reduce_groups(m, c(1, 1, 1, 1))), class(matrix(c(1, 1), ncol = 2)))
     })
 
