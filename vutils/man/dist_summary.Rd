@@ -25,7 +25,7 @@ function.}
 }
 \value{
 DataFrame containing the mean, median, sd,
-    codehigh/low68, codehigh/low95.
+codehigh/low68, codehigh/low95.
 }
 \description{
 \code{dist_summary} summarises a country-date matrix where each column
@@ -33,14 +33,8 @@ is a posterior distribution.
 }
 \details{
 \code{dist_summary} will preserve entire columns of
-    \code{NA} under the assumption that they're missing
-    country-dates; however, it will fail when only a single value
-    within a column is \code{NA} since we never want partial
-    missingness within our posterior distribution.
-
-    More importantly, why did we call this function
-    \code{dist_summary} when there's clearly a much better option?
-    Great question, besides to add to the general confusion
-    surrounding this package, it's also nice to minimize conflicts
-    with \code{dplyr}.
+\code{NA} under the assumption that they're missing
+country-dates; however, it will fail when only a single value
+within a column is \code{NA} since we never want partial
+missingness within our posterior distribution.
 }

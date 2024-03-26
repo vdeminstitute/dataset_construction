@@ -17,17 +17,18 @@ gaps. The resulting vector can be coerced to a factor for use with
 }
 \details{
 Where this is most useful is when we fill in missing
-    observations and we want to make sure we never fill across year
-    gaps. \code{create_idx} returns a grouping vector that can be
-    used when splitting before filling.
+observations and we want to make sure we never fill across year
+gaps. \code{create_idx} returns a grouping vector that can be
+used when splitting before filling.
 
-    The actual values of the returned vector are inconsequential
-    and are only useful for identifying groups.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{The actual values of the returned vector are inconsequential
+and are only useful for identifying groups.
 
-    As an example, V-Dem does not code the occupation of Germany
-    after WWII. To ensure that values prior to 1946 are not used to
-    fill in missingness after 1949, the data should be split by
-    gaps by creating an index column denoting the two groups.
+As an example, V-Dem does not code the occupation of Germany
+after WWII. To ensure that values prior to 1946 are not used to
+fill in missingness after 1949, the data should be split by
+gaps by creating an index column denoting the two groups.
+}\if{html}{\out{</div>}}
 }
 \examples{
 dates <- as.Date(c("1900-01-01", "1901-12-31", "1903-01-01"))

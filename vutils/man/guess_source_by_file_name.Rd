@@ -4,7 +4,7 @@
 \alias{guess_source_by_file_name}
 \title{Pick external source}
 \usage{
-guess_source_by_file_name(file_name = "bnr")
+guess_source_by_file_name(file_name = "area")
 }
 \arguments{
 \item{file_name}{Full or relative path to the file}
@@ -13,14 +13,10 @@ guess_source_by_file_name(file_name = "bnr")
 Character vector depending on the length of the input.
 }
 \description{
-Guesses the name of external source basing on the file name
+Pick external source
 }
 \details{
 For now, it's the best way to identify the name of the source
 although it is not recommended to use it in different context. This function is
 vectorised, hence it can be used not only as a part of other functions but on its own.
-}
-\examples{
-\dontrun{guess_source_by_file_name(list.files("~/Documents/edata/2021/upd", full.names = TRUE))}
-
 }

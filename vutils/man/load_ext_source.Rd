@@ -4,7 +4,7 @@
 \alias{load_ext_source}
 \title{Load and clean external data}
 \usage{
-load_ext_source(file_name = "bnr", con)
+load_ext_source(file_name = "wb_pop", con)
 }
 \arguments{
 \item{file_name}{Full or relative path to the file}
@@ -16,13 +16,6 @@ data.frame with V-Dem country_id, year, and target variable(s).
 }
 \description{
 Read in the data, clean it and assign V-Dem country_id
-}
-\details{
-Nothing more, nothing less than just reading the data, guessing the source,
-and matching cleaning function and merging table for the source. It is not
-vectorised. Before using make sure that your .pgpass file exists and has all
-relevant fields (the function connects to V-Dem data database to extract information
-about countries and country units).
 }
 \examples{
 \dontrun{load_ext_source(list.files("~/Documents/edata/2021/upd/", full.names = TRUE)[1])}

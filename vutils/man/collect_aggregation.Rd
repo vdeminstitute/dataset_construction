@@ -4,12 +4,15 @@
 \alias{collect_aggregation}
 \alias{collect_max}
 \alias{collect_last}
+\alias{collect_first}
 \alias{collect_mean}
 \title{Country-year aggregation helper functions}
 \usage{
 collect_max(v)
 
 collect_last(v)
+
+collect_first(v)
 
 collect_mean(v)
 }
@@ -23,17 +26,19 @@ country-date to country-year level.
 }
 \details{
 When aggregating per year, the base R functions may return
-    a different type than the original input vector. This will
-    cause the \code{summarise} family of functions to error
-    out. The collection of helper functions simply take care of
-    missingness and \code{NA} as appropriate.
+a different type than the original input vector. This will
+cause the \code{summarise} family of functions to error
+out. The collection of helper functions simply take care of
+missingness and \code{NA} as appropriate.
 }
 \section{Functions}{
 \itemize{
-\item \code{collect_max}: Aggregate by max
+\item \code{collect_max()}: Aggregate by max
 
-\item \code{collect_last}: Aggregate by last
+\item \code{collect_last()}: Aggregate by last
 
-\item \code{collect_mean}: Aggregate by mean
+\item \code{collect_first()}: Aggregate by first
+
+\item \code{collect_mean()}: Aggregate by mean
+
 }}
-

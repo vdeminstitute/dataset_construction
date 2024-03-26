@@ -19,10 +19,10 @@ substitution, see the help page for substitution syntax.
 }
 \details{
 We use \code{\link{bquote}} instead of
-    \code{\link{substitute}} to force an explicit syntax
-    highlighting which objects should be substituted. The resulting
-    expression is then evaluated within the context of the parent
-    environment (see: \code{\link{parent.frame}}).
+\code{\link{substitute}} to force an explicit syntax
+highlighting which objects should be substituted. The resulting
+expression is then evaluated within the context of the parent
+environment (see: \code{\link{parent.frame}}).
 }
 \examples{
 x <- 1

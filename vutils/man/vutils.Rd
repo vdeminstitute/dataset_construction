@@ -8,5 +8,5 @@
 Internal V-Dem Functions
 }
 \author{
-Joshua Krusell <joshua.krusell@v-dem.net>
+Joshua Krusell \href{mailto:joshua.krusell@v-dem.net}{joshua.krusell@v-dem.net}
 }

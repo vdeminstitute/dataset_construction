@@ -21,8 +21,8 @@ adjusting the attributes of the object.
 }
 \section{Functions}{
 \itemize{
-\item \code{set_spss_labels}: Set SPSS variable labels
+\item \code{set_spss_labels()}: Set SPSS variable labels
 
-\item \code{set_stata_labels}: Set Stata variable labels
+\item \code{set_stata_labels()}: Set Stata variable labels
+
 }}
-

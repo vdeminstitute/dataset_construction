@@ -22,13 +22,6 @@ containing the columns specified by \code{to} and \code{by}}
 another according to a given translation table (\emph{e.g.},
 translating question IDs to question name).
 }
-\section{Warning}{
- This function is meant to serve as a constructor
-    for identifier specific translation functions --- for example,
-    see the function \code{\link{to_qids}}. It's not
-    particularly useful or inuitive for direct use.
-}
-
 \examples{
 \dontrun{
 # Given a vector of question IDs saved to qids and we want the
@@ -39,8 +32,8 @@ trans(qids, to = "name", ttable = qtable, by = "question_id")
 }
 \seealso{
 \code{\link{to_qids}} for question IDs,
-    \code{\link{to_qnames}} for question names,
-    \code{\link{to_cids}} for country IDs, \code{\link{to_cnames}}
-    for country names.
+\code{\link{to_qnames}} for question names,
+\code{\link{to_cids}} for country IDs, \code{\link{to_cnames}}
+for country names.
 }
 \concept{translation helper functions}

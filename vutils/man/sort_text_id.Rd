@@ -21,8 +21,8 @@ Sorts a character vector of country-dates based on the
 }
 \details{
 Sorts first country-date strings followed by vignette
-    identifiers. The fact that we append vignettes to the end is
-    simply a convenience for when working with the MM code.
+identifiers. The fact that we append vignettes to the end is
+simply a convenience for when working with the MM code.
 }
 \examples{
 v <- c("USA 1920-01-01", "MEX 1902-01-01", "MEX 1900-01-01",

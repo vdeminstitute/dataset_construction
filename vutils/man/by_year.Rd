@@ -23,13 +23,13 @@ the resulting \code{list}.
 }
 \details{
 When splitting \code{x}, \code{by_year} will balance
-         the groups. This means that if there's an intra-year
-         change not on January 1st, the last observation in the
-         previous year will be copied to January 1st. The
-         rationale is that each group should contain the year's
-         full codings --- especially since we usually apply the
-         day-weighted mean function (\code{\link{day_mean}}) to
-         each group.
+the groups. This means that if there's an intra-year
+change not on January 1st, the last observation in the
+previous year will be copied to January 1st. The
+rationale is that each group should contain the year's
+full codings --- especially since we usually apply the
+day-weighted mean function (\code{\link{day_mean}}) to
+each group.
 }
 \examples{
 df <- data.frame(x = 1:3)

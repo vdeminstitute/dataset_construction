@@ -21,13 +21,6 @@ LogicalVector
 a logical vector indicating which variables exist in both
 historical and contemporary.
 }
-\section{Warning}{
- \code{is.shared_tag} works only with v2/v3 tag
-    names. So older variable names lacking the necessary prefix
-    will always return FALSE, which is actually what we want
-    because they only exist in the deprecated contemporary surveys.
-}
-
 \examples{
 vars <- c("v2clacfree", "v3clacfree", "v3elage", "v2elpdcamp")
 ttable <- data.frame(name = vars, stringsAsFactors = FALSE)

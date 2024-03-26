@@ -18,30 +18,11 @@ country-date string.
 }
 \details{
 A country-date string consists of a 1-3 lettered V-Dem
-    country identifier, \code{country_text_id}, concatenated with a
-    space to a year-month-day date, \code{historical_date}. The
-    resulting string is mostly used as the rownames of matrices in
-    order to identify each country-date observation.
-
-    Ideally, we would create a \code{country_date} S3 class so that
-    we can avoid the performance cost of constantly checking
-    whether our country-date strings are properly
-    formatted. Unfortunately, while R allows character vectors with
-    additional attributes to be set as the rownames of matrices,
-    when subsetting a matrix the resulting rownames loses all of
-    those attributes. We can partially avoid the performance
-    problem in a less elegant with memoisation.
+country identifier, \code{country_text_id}, concatenated with a
+space to a year-month-day date, \code{historical_date}. The
+resulting string is mostly used as the rownames of matrices in
+order to identify each country-date observation.
 }
-\section{Warning}{
- No attempt is currently made to ensure that the
-    date portion of a country-date string is a valid date beyond
-    checking the number of digits.
-
-    \code{is_country_date} will also always return \code{FALSE} for
-    missing values; however, \code{NULL} will return
-    \code{logical(0)}.
-}
-
 \examples{
 is_country_date(c("AFG 1900-01-01", "pilot_1_v1", "BFD 2001"))
 

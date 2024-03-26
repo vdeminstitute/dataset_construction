@@ -17,11 +17,11 @@ versions of the HLIs are considered separate question tag, since
 they have alternative entries in the codebook.
 }
 \section{Warning}{
- Here be dragons. We will only transform V-Dem
-    variable tags, meaning that we'll attempt to match \code{v\\d}
-    or \code{e_v\\d}, while always excluding the direct democracy
-    variables (v2dd* or v2xdd*) since we never create separate
-    versions of those.
+ We will only transform V-Dem
+variable tags, meaning that we'll attempt to match \code{v\\d}
+or \code{e_v\\d}, while always excluding the direct democracy
+variables (v2dd* or v2xdd*) since we never create separate
+versions of those.
 }
 
 \examples{

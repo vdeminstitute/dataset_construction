@@ -19,10 +19,10 @@ Replace original data releases with V-Party releases
 }
 \examples{
 \dontrun{
-VPARTY_RELEASES <- unlist(strsplit("10.11.14", "[.]"))
+VPARTY_RELEASES <- unlist(strsplit("10.12.14", "[.]"))
 datarelease <- c("10-14.",
 "10-14. Available upon request, subject to review and approval",
-"10-14.", "14.", "11.")
+"10-14.", "14.", "11.", "9-12", "9-10.")
 convert_version(datarelease, VPARTY_RELEASES)
 }
 

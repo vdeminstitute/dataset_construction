@@ -22,11 +22,12 @@ ordering of \code{keys} applied to the original ordering of
 }
 \details{
 This function is used exclusively to set the priors for
-    the vignettes. Currently, based on the order of the thresholds,
-    we set the priors to be from -1.5 to 1.5.
+the vignettes. Currently, based on the order of the thresholds,
+we set the priors to be from -1.5 to 1.5.
 
-    Vignette thresholds can be sorted by any identifier as long as
-    we can determine the proper order using \code{sort}.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Vignette thresholds can be sorted by any identifier as long as
+we can determine the proper order using \code{sort}.
+}\if{html}{\out{</div>}}
 }
 \examples{
 to_seq(c("a", "d", "c", "a"))

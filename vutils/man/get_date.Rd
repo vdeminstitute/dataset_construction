@@ -20,14 +20,14 @@ Extracts the individual components from a country-date string
 }
 \details{
 Country-date strings are a string concatenation of a three
-    letter country ID, \code{country_text_id}, and an ISO 8601
-    date, \code{historical_date}. \code{get_date} is a vectorised
-    function that returns the date part, converted using
-    \code{as.Date}.
+letter country ID, \code{country_text_id}, and an ISO 8601
+date, \code{historical_date}. \code{get_date} is a vectorised
+function that returns the date part, converted using
+\code{as.Date}.
 
 The \code{get_text_id} function is the vectorised
-    counterpart to \code{get_date} that returns the
-    \code{country_text_id} components
+counterpart to \code{get_date} that returns the
+\code{country_text_id} components
 }
 \examples{
 get_date("SWE 1988-04-20")

@@ -4,15 +4,15 @@
 \alias{country_trans}
 \title{Display country transformations}
 \usage{
-country_trans(v, db = pg_connect("vdem_data"), full = FALSE)
+country_trans(v, db_internal = pg_connect("vdem_data"), full = FALSE)
 }
 \arguments{
-\item{db}{database connection.}
-
 \item{countries}{Character or numeric vector.}
+
+\item{db}{database connection.}
 }
 \description{
-Given a vector of \code{country_ids}s, \code{country_text_ids}, and 
+Given a vector of \code{country_ids}s, \code{country_text_ids}, and
 \code{country_names} returns all other available transformations.
 }
 \examples{

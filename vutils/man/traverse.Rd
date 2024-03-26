@@ -18,7 +18,7 @@ bridge/lateral coding.
 }
 \details{
 Ideally, for a particular C variable, every country (node)
-    should be linked through bridge/lateral coding. Countries which
-    do not appear in the output \code{DataFrame} are isolated
-    nodes.
+should be linked through bridge/lateral coding. Countries which
+do not appear in the output \code{DataFrame} are isolated
+nodes.
 }

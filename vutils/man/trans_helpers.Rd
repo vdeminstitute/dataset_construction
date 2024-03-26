@@ -32,31 +32,32 @@ Convenience functions to translate several common identifiers at V-Dem.
 }
 \details{
 The listed helper functions are fairly rigid in their
-    assumptions, especially in the case of assumed column names in
-    the translation table.
+assumptions, especially in the case of assumed column names in
+the translation table.
 
-    It's worth noting that the function \code{to_qlabels} expects
-    not the \code{question} table as \code{ttable}, but rather the
-    \code{codebook} table, which contains the canonical short-form
-    question description texts. Further, it includes a call to
-    \code{\link{get_root}} so that it can conveniently be called on
-    the columns of the final dataset.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{It's worth noting that the function \code{to_qlabels} expects
+not the \code{question} table as \code{ttable}, but rather the
+\code{codebook} table, which contains the canonical short-form
+question description texts. Further, it includes a call to
+\code{\link{get_root}} so that it can conveniently be called on
+the columns of the final dataset.
+}\if{html}{\out{</div>}}
 }
 \section{Functions}{
 \itemize{
-\item \code{to_qlabels}: Translate question tag names to question labels
+\item \code{to_qlabels()}: Translate question tag names to question labels
 
-\item \code{to_cids}: Translate country text IDs to country IDs
+\item \code{to_cids()}: Translate country text IDs to country IDs
 
-\item \code{to_cnames}: Translate country text IDS to country names
+\item \code{to_cnames()}: Translate country text IDS to country names
 
-\item \code{to_ctext_ids}: Translate country IDs to country text IDs
+\item \code{to_ctext_ids()}: Translate country IDs to country text IDs
 
-\item \code{to_qids}: Translate question tag names to question IDs
+\item \code{to_qids()}: Translate question tag names to question IDs
 
-\item \code{to_qnames}: Translate question IDs to question tag names
+\item \code{to_qnames()}: Translate question IDs to question tag names
+
 }}
-
 \examples{
 \dontrun{
 tags <- c("v2clacfree", "v2elpaidig")
