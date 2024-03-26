@@ -115,63 +115,81 @@ create_idx.Date <- function(x) {
 
 
 #' @export
-interpolate_vdem_style <- function(df, col, utable) {
-    stopifnot(is.data.frame(df))
-    stopifnot(c("historical_date", "year", "country_id") %in% names(df))
-    stopifnot(!"fill_col" %in% names(df))
-
-    out <- df %>%
-        add_gap_idx(utable) %>%
-        dplyr::group_by(country_id) %>%
-        # interpolate gap_idx for historical years not in utable!
-        # This should not interpolate into gaps, that is dangerous.
-        dplyr::arrange(dplyr::desc(historical_date)) %>%
-        dplyr::mutate(gap_idx = locf(gap_idx)) %>%
-        dplyr::ungroup() %>%
-        #{stopifnot(!anyNA(.$gap_idx))} %>%
-        dplyr::group_by(country_id, year) %>%
-        dplyr::arrange(country_id, historical_date) %>%
-        dplyr::mutate(fill_col = interpolate(!!dplyr::sym(col))) %>%
-        dplyr::group_by(country_id, gap_idx) %>%
-        dplyr::arrange(country_id, historical_date) %>%
-        dplyr::mutate(fill_col = locf(fill_col)) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-gap_idx) %>%
-        as.data.frame(stringsAsFactors = F)
-}
-
-
-
-#' @export
-interpolate_vdem_col <- function(df, col, utable) {
-    stopifnot(is.data.frame(df))
-    stopifnot(c("historical_date", "year", "country_id") %in% names(df))
-    out <- interpolate_vdem_style(df, col, utable)
-    out[[col]] <- out$fill_col
-    out$fill_col <- NULL
-    out
-}
-
-#' @export
-fill_special_cols <- function(df, utable) {
-    colu <- c("v2lgbicam", "v2exhoshog", "v2expathhs", "v2expathhg",
-      "v2lgello", "v2lginello", "v2lgelecup", "v2lginelup",
-      "v2exapup", "v2exapupap")
-    lapply(colu, function(v) {
-        if (v %in% names(df))
-            df <<- interpolate_vdem_col(df, v, utable)
-    }) %>% invisible
-
-    df
-}
-
-
-#' @export
 add_gap_idx <- function(df, utable) {
     stopifnot(c("year", "country_id") %in% names(df))
     stopifnot(!"gap_idx" %in% names(df))
-    dplyr::left_join(df, dplyr::select(utable, country_id, year, gap_idx),
-                     by = c("country_id", "year"))
+    outdf <- 
+		dplyr::left_join(df, 
+						 dplyr::select(utable, country_id, year, gap_idx),
+ 	                    by = c("country_id", "year")) %>%
+		# Fill gap_idx for pre-historical period!
+		dplyr::group_by(country_id) %>%
+		dplyr::arrange(desc(historical_date)) %>%
+		dplyr::mutate(gap_idx = locf(gap_idx)) %>%
+		dplyr::ungroup(.) %>%
+		dplyr::arrange(country_id, historical_date)
+	stopifnot(`gap_idx has missing values!` = !is.na(outdf$gap_idx))
+	return(outdf)
 }
 
 
+
+#' @export
+interpolate_components <- function(df, cols, utable, keep_nan = TRUE, 
+	coder_level = FALSE) {
+	
+	YEAR_CREATED <- FALSE
+	stopifnot(is.data.frame(df))
+    stopifnot(c("historical_date", "country_id") 
+		%in% names(df))
+
+	is.nan.data.frame <- function(df) {
+		sapply(df, is.nan) %>% cbind(.)
+	}
+
+	if (keep_nan) {
+		bool_m <- is.nan.data.frame(df)
+		df[bool_m] <- Inf
+	}
+
+	# If year column is missing create it (for utable merge)
+	if (is.null(df$year)) {
+		df$year <- to_year(df$historical_date)
+		YEAR_CREATED <- TRUE
+	}
+
+	# If year column has missing fill it.
+	if (anyNA(df$year)) {
+		df$year[is.na(df$year)] <- to_year(df$historical_date[is.na(df$year)])
+	}
+
+
+	if (coder_level) {
+		group_cols <- c("country_id", "gap_idx", "coder_id")
+	} else {
+		group_cols <- c("country_id", "gap_idx")
+	}
+
+	df %<>%
+		add_gap_idx(utable) %>%
+		dplyr::group_by(dplyr::across(group_cols)) %>%
+		dplyr::arrange(country_id, historical_date) %>%
+		dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(cols), .fns = locf))
+	
+	stopifnot(`The coding period is outside utable!` = !is.na(df$gap_idx))
+
+	if (keep_nan) {
+		lapply(cols, function(v, df_) {
+			df[[v]][is.infinite(df_[[v]])] <<- NaN
+		}, df_ = df) %>% invisible
+	}
+
+	df %<>% dplyr::ungroup(.) %>% dplyr::select(-gap_idx) %>% as.data.frame
+
+	if (YEAR_CREATED) {
+		df %<>% dplyr::select(-year)
+	}
+
+
+	return(df)
+}

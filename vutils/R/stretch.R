@@ -75,11 +75,7 @@ stretch.matrix <- function(x, by, gaps = TRUE, rule_366 = TRUE, preserve.na = TR
 
     # If TRUE we preserve NA from `x` and carry it forward in the
     # full.ma matrix since we assume that it represents missingness
-    # that we want retained. Unfortunately, we're running up against
-    # the R type system here so we have no meaningful way to
-    # distinguish NAs from expanding and NAs originally in `x`. As an
-    # ugly hack, replace the NAs from `x` with Inf and convert back in
-    # the end.
+    # that we want retained. 
     if (isTRUE(preserve.na)) {
         b <- rowSums(is.na(x)) == ncol(x)
 
@@ -144,7 +140,6 @@ stretch.matrix <- function(x, by, gaps = TRUE, rule_366 = TRUE, preserve.na = TR
     if (isTRUE(interpolate)) {
         years <- to_year(dates)
 
-        # We really should think about simplifying this
         full.ma <- by_split(full.ma, factors %^% years,
                            methods::getFunction("interpolate"))
         full.ma <- full.ma[order(rownames(full.ma)),, drop = F]
@@ -163,7 +158,7 @@ mm_stretch_z_sample <- function(ll, utable) {
     stretch(load_matrix(ll[[1]]$post.sample$z),
             ll[[1]]$country_dates,
             rule_366 = TRUE,
-            interpolate = TRUE,
+            interpolate = FALSE,
             utable = utable)
 }
 
@@ -172,7 +167,7 @@ binary_stretch_z_sample <- function(ll, utable) {
     stretch(load_matrix(ll[[1]]$post.sample$z),
             ll[[1]]$country_dates,
             rule_366 = TRUE,
-            interpolate = TRUE,
+            interpolate = FALSE,
             utable = utable)
 }
 
@@ -181,7 +176,7 @@ bfa_stretch_z_sample <- function(ll, utable) {
     stretch(load_matrix(ll[[1]]$thin_post), 
             ll[[1]]$country_dates, 
             rule_366 = TRUE, 
-            interpolate = TRUE, 
+            interpolate = FALSE, 
             utable = utable)
 }
 
@@ -195,7 +190,7 @@ stretch_combined <- function(ll, utable) {
 	info(sprintf("Found %d combined country-dates", length(combined_names)))
 	out <- Map(function(m, nam) {
         info("Stretching " %^% nam)
-        stretch(m, combined_names, interpolate = T, utable = utable)
+        stretch(m, combined_names, interpolate = FALSE, utable = utable)
     }, m = ll, nam = nn)
     
     stopifnot({
@@ -208,19 +203,12 @@ stretch_combined <- function(ll, utable) {
 }
 
 #' @export
-calc_elecreg_index <- function(v) {
-    change <- diff(v)
-    change[change == -1] <- 1
-    cumsum(c(1, change))
-}
-
-#' @export
 utable_join_elecreg_index <- function(utable, elecreg_cy) {
     if ("historical_date" %in% names(elecreg_cy))
         elecreg_cy %<>% dplyr::select(-historical_date)
     dplyr::left_join(utable, elecreg_cy, by = c("country_id", "year")) %>%
         dplyr::group_by(gap_idx) %>%
-        dplyr::mutate(elecreg_idx = calc_elecreg_index(v2x_elecreg)) %>%
+        dplyr::mutate(elecreg_idx = vbase::create_index(v2x_elecreg)) %>%
         dplyr::group_by(gap_idx, elecreg_idx) %>%
         dplyr::mutate(combined_idx = dplyr::cur_group_id())
 }
@@ -286,6 +274,6 @@ front_filling_els_variables <- function(m, utable, elecreg_cy, elecreg_cd, count
     # Check that non-NA observations are identical!
     bool <- !is.na(m[, 1])
     stopifnot(identical(m[bool, ], m_df_done[bool, ]))
-    
+     
     return(m_df_done)
 }

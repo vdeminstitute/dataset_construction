@@ -113,7 +113,8 @@ mm_log_table <- function(LOG_PATH, varname) {
 
 #' @export
 mm_log_table_all <- function(LOG_PATH) {
-    ll <- list.files(LOG_PATH, full.names = T)
+    ll <- list.files(LOG_PATH, full.names = TRUE)
+    ll <- ll[!dir.exists(ll)]
     dplyr::bind_rows(lapply(ll, mm_read_log)) %>% dplyr::arrange(name)
 }
 
@@ -126,21 +127,21 @@ make_slurm_fname <- function(file_name) {
 }
 
 #' @export
-submit_accountability <- function(v, directory = Sys.getenv("ACC_DIR"),
+accountability_submit_job <- function(v, directory = Sys.getenv("ACC_DIR"),
     timeout = "72:00:00", script = "scripts/submit.sh",
         hpc = "tetralith") {
 
     stopifnot(!is.null(v), length(v) == 1)
-    if (hpc == "tetralith") {
-        ssq <- shQuote("projinfo -C | grep snic | awk '{print $3}'")
-        account <- system(paste0("ssh ", hpc, " ", ssq), intern = TRUE)
-    }
-    if (hpc == "kebnekaise")
-        account <- "SNIC2019-3-154"
 
+    if (hpc == "tetralith") {
+        projAccount <- shQuote("projinfo -C | grep '^Slurm account' | awk '{print $3}'")
+        info(sprintf("Logging into %s with account %s", hpc, projAccount))
+        account <- system(paste0("ssh ", hpc, " ", projAccount), intern = TRUE)
+    }
+
+    # Create logfile and identify rscript
     logfile <- paste0(directory, "/logs/", v, "-", Sys.Date(), "_%A_%N.out")
     rscript <- paste0(directory, "/R/", v, ".R")
-
 
     system(paste0("ssh ", hpc, " 'cd ", directory,
         "; export var=", v,
@@ -148,13 +149,15 @@ submit_accountability <- function(v, directory = Sys.getenv("ACC_DIR"),
         "; sbatch -J ", v, " -A ", account," -o ", logfile,
         " -e ", logfile, " --time=", timeout,
         " --mail-type=FAIL -N 1 --exclusive ", script, "'"))
+
+    info(sprintf("Submitted %s with %s timeout", v, timeout))
 }
 
 #' @export
 squeue_table <- function(USER = "x_johvo") {
     system(paste0("ssh tetralith \"squeue -u ", USER, 
-                  " --format='%.18i %.9P %.20j %.8u %.2t %.10M %.6D %R'\""), 
-           intern = TRUE) %>%
+        " --format='%.18i %.9P %.20j %.8u %.2t %.10M %.6D %R'\""),
+        intern = TRUE) %>%
     strsplit(., " ") %>% 
     lapply(function(v) {
         v <- v[v != ""]
@@ -184,4 +187,115 @@ mm_summary <- function(df_logs) {
         TRUE ~ "weird"), .groups = "drop") %>%
     dplyr::arrange(name, status) %$%
     table_(status)
+}
+
+#' @export
+# Check which components for an index are running
+components_running <- function(db, var, codebook, qtable) {
+    # Define var dependencies
+    deps <- rec_components(var, codebook)
+    # Define mm dependencies
+    mmdeps <- subset(qtable, mm == TRUE)
+    rundeps <- intersect(deps, mmdeps$name)
+    
+    statement <- sprintf("select * from tasks where module_name ~ 'status_mm' and status = 'hpc_waiting' and task_name in (%s);", toString(sprintf("'%s'", rundeps)))
+    running <- DBI::dbGetQuery(db, statement)
+
+    df <- lapply(running$task_name, function(i) {
+    x <- mm_log_table(file.path(Sys.getenv("MM_SSH_DIR"), "logs"), i)
+    mutate(x, iter = as.numeric(iter)) %>%
+        arrange(desc(iter)) %>%
+        filter(row_number() == 1)
+    }) %>%
+    bind_rows()
+    
+    return(df)
+}
+
+#' @export
+# Check which components for an index are done
+components_done <- function(db, var, codebook, qtable) {
+    deps <- rec_components(var, codebook)
+    mmdeps <- subset(qtable, mm == TRUE)
+    rundeps <- intersect(deps, mmdeps$name)
+    
+    statement <- sprintf("select * from tasks where module_name ~ 'status_mm' and status = 'done' and task_name in (%s);", toString(sprintf("'%s'", rundeps)))
+    done <- DBI::dbGetQuery(db, statement)
+
+    df <- lapply(done$task_name, function(i) {
+    x <- mm_log_table(file.path(Sys.getenv("MM_SSH_DIR"), "logs"), i)
+    mutate(x, iter = as.numeric(iter)) %>%
+        arrange(desc(iter)) %>%
+        filter(row_number() == 1)
+    }) %>%
+    bind_rows()
+    
+    return(df)
+}
+
+#' @export
+# Check what mm jobs are running at what iteration on the hpc
+mm_running <- function(db, codebook, qtable) {
+
+    running <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status != 'done';")
+
+    df <- lapply(running$task_name, function(i) {
+    x <- mm_log_table(file.path(Sys.getenv("MM_SSH_DIR"), "logs"), i)
+    mutate(x, iter = as.numeric(iter)) %>%
+        arrange(desc(iter)) %>%
+        filter(row_number() == 1)
+    }) %>%
+    bind_rows()
+    
+    return(df)
+}
+
+#' @export
+# Check what mm jobs are done and additional convergence details
+
+mm_done <- function(db, codebook, qtable) {
+
+    done <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status = 'done';")
+
+    df <- lapply(done$task_name, function(i) {
+    x <- mm_log_table(file.path(Sys.getenv("MM_SSH_DIR"), "logs"), i)
+    mutate(x, iter = as.numeric(iter)) %>%
+        arrange(desc(iter)) %>%
+        filter(row_number() == 1)
+    }) %>%
+    bind_rows()
+    
+    return(df)
+}
+
+#' @export
+# Check what bfa jobs are running on the hpc
+bfa_components_running <- function(db, var, codebook, qtable) {
+    # Define var dependencies
+    deps <- rec_components(var, codebook)
+    # Define mm dependencies
+    bfadeps <- subset(qtable, bfa == TRUE)
+    rundeps <- intersect(deps, bfadeps$name)
+
+    running <- DBI::dbGetQuery(db, sprintf(
+        "select * from tasks where module_name ~ 'status_bfa' and status = 'hpc_waiting' and task_name in (%s);", 
+        toString(sprintf("'%s'", rundeps))))
+    
+    return(running)
+}
+
+#' @export
+# Check what bfa jobs haven't been run yet
+bfa_components_not_run <- function(db, var, codebook, qtable) {
+    # Define var dependencies
+    deps <- rec_components(var, codebook)
+    # Define mm dependencies
+    bfadeps <- subset(qtable, bfa == TRUE)
+    rundeps <- intersect(deps, bfadeps$name)
+    
+    running <- DBI::dbGetQuery(db, sprintf(
+        "select * from tasks where module_name ~ 'submit_bfa' and status != 'done' and task_name in (%s);", 
+        toString(sprintf("'%s'", rundeps))))
+    
+    return(running)
 }

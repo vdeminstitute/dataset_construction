@@ -1,6 +1,5 @@
 #' Pick external source
 #'
-#' Guesses the name of external source basing on the file name
 #' 
 #' @param file_name Full or relative path to the file
 #' 
@@ -10,15 +9,10 @@
 #'     
 #' @return Character vector depending on the length of the input.
 #'
-#' @examples
-#' \dontrun{guess_source_by_file_name(list.files("~/Documents/edata/2021/upd", full.names = TRUE))}
-#'
 #' @export
 guess_source_by_file_name <- function(file_name = "area") {
 	file_name <- basename(file_name)
 	source <- dplyr::case_when(
-		# download Haber & Menaldo data twice
-		# for one of them assign a slightly different name
 		grepl("Haber", file_name) ~ "habmen",
 		grepl("area", file_name) ~ "area",
 		grepl("ddrevisited", file_name) ~ "cheibub",
@@ -693,12 +687,6 @@ wb_pop <- function(full_name, mtable) {
 #' @param file_name Full or relative path to the file
 #' 
 #' @param con PostgreSQL connection to the database with external data
-#' 
-#' @details Nothing more, nothing less than just reading the data, guessing the source,
-#' and matching cleaning function and merging table for the source. It is not
-#' vectorised. Before using make sure that your .pgpass file exists and has all
-#' relevant fields (the function connects to V-Dem data database to extract information
-#' about countries and country units).
 #'     
 #' @return data.frame with V-Dem country_id, year, and target variable(s).
 #'
@@ -728,8 +716,6 @@ load_ext_source <- function(file_name = "wb_pop", con) {
 			}) %>%
 		dplyr::bind_rows()
 
-		# I don't really like this part but let's just hope that it works...
-		# don't need to invoke it too often luckily
 		cntr <- load_country() %>%
 			dplyr::select(country_id, country_name = name)
 		

@@ -63,12 +63,6 @@ hpd <- function(m, prob) {
 #'     within a column is \code{NA} since we never want partial
 #'     missingness within our posterior distribution.
 #'
-#'     More importantly, why did we call this function
-#'     \code{dist_summary} when there's clearly a much better option?
-#'     Great question, besides to add to the general confusion
-#'     surrounding this package, it's also nice to minimize conflicts
-#'     with \code{dplyr}.
-#'
 #' @return DataFrame containing the mean, median, sd,
 #'     codehigh/low68, codehigh/low95.
 #'
@@ -82,7 +76,6 @@ dist_summary.matrix <- function(m, expanded.names = NULL, drop.vignettes = T,
     if (isTRUE(drop.vignettes) & !is.null(colnames(m)))
         m <- m[, !is_vignette(colnames(m))]
 
-    # Split missing and nonmissing columns since `hpd` will choke on NA
     missing_b <- colSums(is.na(m)) == nrow(m)
     nonmissing <- m[, !missing_b, drop = F]
 
@@ -98,7 +91,6 @@ dist_summary.matrix <- function(m, expanded.names = NULL, drop.vignettes = T,
     summarised_vars <- c("mean", "median", "sd", "codelow68", "codehigh68",
                         "codelow95", "codehigh95")
 
-    # TODO: If there's no missing, we should avoid copying
     out <- matrix(NA, ncol(m), 7, dimnames = list(colnames(m), summarised_vars))
     out[!missing_b, ] <- nonmissing_summary
 

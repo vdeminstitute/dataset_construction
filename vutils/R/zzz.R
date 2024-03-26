@@ -6,6 +6,9 @@
     if (!interactive())
         return(NULL)
 
+	if (Sys.info()["sysname"] != "Linux")
+		return(NULL)
+
 	parallel::mcparallel({
 		dcf <- utils::packageDescription(pkgname)
     	pkg_repo <- dcf$Repository
@@ -34,7 +37,6 @@
 
 	    cran_url <- repos[names(repos) == pkg_repo]
 
-	    # Default CRAN repo hasn't been set
 	    if (cran_url == "@CRAN@")
 	        return(NULL)
 
@@ -57,8 +59,6 @@
                                       pkgname, cran_version, pkg_version))
 	    }
 
-    	# auto update if there is a newer version?
-    	# update.packages(repos="http://my.local.server/R", ask=FALSE)
 	})
  
 }

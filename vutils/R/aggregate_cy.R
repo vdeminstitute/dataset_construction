@@ -143,7 +143,7 @@ cy.day_mean.data.frame <- function(x, dates = NULL, by = NULL, ...) {
     }
 
     if ("year" %in% colnames(x)) {
-        warn("There is already a year column... \n I am dropping it.")
+        info("There is already a year column that will be dropped.")
         x$year <- NULL
     }
 
@@ -170,38 +170,32 @@ cy.day_mean.data.frame <- function(x, dates = NULL, by = NULL, ...) {
     # so we can find objects not residing within `x`
     p <- parent.frame()
 
-    dates_v <- prep_arg(substitute(dates), p) %>% as.Date
+    # by dates
+    dates_v <- as.Date(prep_arg(substitute(dates), p))
     if (length(dates_v) != nrow(x))
         stop("Mismatch length between dates and x", call. = F)
 
     if (missing(by)) {
-        aggregated.df <- by_year(x, dates_v, day_mean) %>%
-            do.call(rbind, .)
-
+        aggregated.df <- do.call(rbind, by_year(x, dates_v, day_mean))
         return(aggregated.df)
     }
 
+    # by units
     by_v <- prep_arg(substitute(by), p)
     if (length(by_v) != nrow(x))
         stop("Mismatched length between `by` and x", call. = F)
 
-    dates.ll <- split(dates_v, by_v)
-    ll <- split(x, by_v) %>%
+    ll <-
         parallel::mcMap(function(sub.df, sub_dates) {
-            by_year(sub.df, sub_dates, day_mean) %>%
-                do.call(rbind, .)
-            }, ., dates.ll, ...)
-
+            do.call(rbind, by_year(sub.df, sub_dates, day_mean))
+            }, split(x, by_v), split(dates_v, by_v), ...)
     mc_assert(ll)
+    
     aggregated.df <- do.call(rbind, ll)
 
-    bynames <- sub("[.]\\d*$", "", row.names(aggregated.df))
-    aggregated.df[[deparse(substitute(by))]] <- bynames
+    aggregated.df[[deparse(substitute(by))]] <- sub("[.]\\d*$", "", row.names(aggregated.df))
     row.names(aggregated.df) <- NULL
 
-	# These next lines seems useless, but otherwise there is a bug in numeric values
-	# being slightly different from integer values (e.g. 29.000001 vs. 29) and would not match.
-	# This is a problem passed from C++ using Rcpp.
     if ("country_id" %in% names(aggregated.df) & class(aggregated.df$country_id) == "numeric") {
         aggregated.df[["country_id"]] <- as.numeric(as.integer(aggregated.df[["country_id"]]))
     }
@@ -209,3 +203,84 @@ cy.day_mean.data.frame <- function(x, dates = NULL, by = NULL, ...) {
     aggregated.df
 }
 
+
+
+#' @export
+election_date_mm_stretch_country_date <- function(
+	df, tag, utable, elecreg_cy, country) {
+
+    # Prepare elecreg_cy
+    elecreg_cy <- merge(
+        elecreg_cy, 
+        country[, c("country_id", "country_text_id")],
+        by = "country_id", all.x = TRUE)
+    elecreg_cy[["country_id"]] <- NULL
+	
+    # Prepare utable
+    utable <- utable[, c("country_text_id", "year", "gap_idx", "project")]
+
+    # Prepare df
+    df[["year"]] <- vutils::to_year(df[["historical_date"]])
+    outdf <- merge(
+        df, 
+        utable, 
+        by = c("country_text_id", "year"), 
+        all = TRUE)
+    outdf <- merge(
+        outdf, 
+        elecreg_cy, 
+        by = c("country_text_id", "year"), 
+        all = TRUE)
+    outdf <- vbase::organiseRows(outdf, country_text_id, year)
+	# Set missing historical_date to 1st of year
+	outdf$historical_date[is.na(outdf$historical_date)] <- 
+		as.Date(paste0(outdf$year[is.na(outdf$historical_date)], "-01-01"), 
+				format = "%Y-%m-%d")
+
+    outdf <- vbase::organiseRows(outdf, country_text_id, historical_date)
+
+    # Drop period 'contemporary-only' for v3-variables
+    if (isTRUE(startsWith(tag, prefix = "v3"))) {
+        info("Dropping contemporary-only")
+        outdf <- outdf[!outdf$project %in% "contemporary-only", ]
+    }
+
+    # Drop project column
+    outdf[["project"]] <- NULL
+
+	# Frontfill gap_idx
+	outdf %<>% 
+		dplyr::group_by(country_text_id) %>%
+		dplyr::arrange(desc(year)) %>%
+		dplyr::mutate(gap_idx = locf(gap_idx)) %>%
+		dplyr::ungroup(.) %>% 
+        dplyr::arrange(country_text_id, historical_date)
+
+	outdf %<>% 
+        # Set v2x_elecreg to 0 when missing
+		dplyr::mutate(v2x_elecreg = ifelse(is.na(v2x_elecreg), 0, v2x_elecreg)) %>% 
+        dplyr::group_by(country_text_id) %>% 
+        # Create index on elecreg that identifies coherent electoral regimes
+        dplyr::mutate(elecreg_cumidx = vbase::create_index(v2x_elecreg)) %>% 
+        dplyr::ungroup(.) %>%
+        dplyr::arrange(country_text_id, historical_date)
+
+	stopifnot(!anyNA(outdf$gap_idx))
+	stopifnot(!anyNA(outdf$elecreg_cumidx))
+	stopifnot(!anyNA(outdf$historical_date))
+	stopifnot(!anyNA(outdf$year))
+	stopifnot(!anyNA(outdf$v2x_elecreg))
+
+    # Group on cumulative elecreg index and interpolate forwards
+    # This will make CY longer than CD
+	outdf %<>%
+		dplyr::group_by(country_text_id, gap_idx, elecreg_cumidx) %>%
+		dplyr::arrange(country_text_id, historical_date) %>%
+		dplyr::reframe(dplyr::across(everything(), locf))
+    # name 'median' is produced by the model.R script  
+	outdf <- outdf[!is.na(outdf[["median"]]), , drop = FALSE]
+	outdf %<>% dplyr::select(-year, -gap_idx, -v2x_elecreg, -elecreg_cumidx)
+    stopifnot(!dplyr::is.grouped_df(outdf))
+
+	return(as.data.frame(outdf))
+}

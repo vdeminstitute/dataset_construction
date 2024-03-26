@@ -44,3 +44,23 @@ traverse <- function(x, root = 20) {
     recurse
     return(aux)
 }
+
+#' @title Delete a question from \code{coder_table}
+#' @param question_id A V-Dem \code{question_id}
+#' @param db A dataset construction database connection
+#' @return Returns NULL, invisibly.
+#' @details This function deletes a question from the \code{coder_table} given a valid question id.  It is used in the dataset construction module \code{gen_coder_tables.R}.
+#' 
+#' @examples
+#' \dontrun{
+#' db <- vbase::pg_connect("v13")
+#' delete_coder_question(2500, db) 
+#' }
+#'
+#' @export
+delete_coder_question <- function(question_id, db) {
+    DBI::dbGetQuery(
+        conn = db,
+        statement = sprintf("DELETE FROM coder_table WHERE question_id=%d;", question_id)
+    )
+}

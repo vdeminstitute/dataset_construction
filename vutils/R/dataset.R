@@ -4,8 +4,8 @@ find_vars <- function(vari, qtable) {
     if (!vari %in% qtable$name)
         stop("The variable is not in the question table")
 
-    if (vari == "e_regionpol_6C")
-        return("e_regionpol_6C")
+    if (vari %in% c("e_regionpol_6C", "e_regionpol_7C"))
+        return(vari)
 
 	if (vari == "e_uds_median")
 		return(c("e_uds_median", "e_uds_mean", "e_uds_pct025", "e_uds_pct975"))
@@ -30,6 +30,13 @@ find_vars <- function(vari, qtable) {
                  "_mean",
                  "_nr")
 
+	# mm + mode
+	mm_mode <- c("_codelow", "_codehigh", "_sd",
+                 "_osp", "_osp_codelow", "_osp_codehigh", "_osp_sd",
+                 "_ord", "_ord_codelow", "_ord_codehigh",
+                 "_mean", "_mode",
+                 "_nr")
+
     #other_index
     other_index <- c("_codelow", "_codehigh")
 
@@ -51,6 +58,8 @@ find_vars <- function(vari, qtable) {
         varis <- index_vars
     } else if(df$additional_versions == "*_osp, *_ord, *_codelow, *_codehigh, *_sd, *_mean, *_nr") {
         varis <- mm_vars
+	} else if (df$additional_versions == "*_osp, *_ord, *_codelow, *_codehigh, *_sd, *_mean, *_mode, *_nr") {
+		varis <- mm_mode
     } else if(df$additional_versions == "*_osp, *_codelow, *_codehigh") {
         varis <- account_vars
     } else if(df$additional_versions == "*_codelow, *_codehigh") {
@@ -77,16 +86,7 @@ find_vars <- function(vari, qtable) {
 #' @describeIn trans_helpers Translate question tag names to question labels
 #' @export
 to_qlabels <- function(v, ttable) {
-    # We call this function with the columns of a data.frame, so strip
-    # out all the generated codelow/high, sd, mean etc etc.
     basetags <- get_root(v)
-
-    # Unlike to_qids and to_qnames, some of our tag names may not be
-    # in our lookup table. Instead of erroring, just return an empty
-    # string unless it's historical in which case try the v2 form.
-    #basetags <- ifelse(is.hist(basetags) & !basetags %in% ttable$name,
-    #                  "v2" %^% substring(basetags, 3),
-    #                  basetags)
 
     out <- character(length(v))
     out[basetags %in% ttable$name] <-

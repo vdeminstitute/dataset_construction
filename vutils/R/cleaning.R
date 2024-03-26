@@ -12,8 +12,7 @@ clean_by_utable.data.frame <- function(x, utable, party = FALSE) {
     stopifnot(!any(is.na(x$year)))
     stopifnot(!any(is.na(x$country_id)))
     dplyr::inner_join(x, utable[, "country_id", "year"],
-                      by = c("country_id", "year")) %>%
-    # This may remove tibble grouping, be careful!
+        by = c("country_id", "year")) %>%
     as.data.frame(stringsAsFactors = FALSE)
 }
 
@@ -28,7 +27,7 @@ clean_by_utable.matrix <- function(x, utable, party = FALSE) {
         stringsAsFactors = FALSE) %>%
         dplyr::left_join(
             dplyr::select(utable, country_text_id,
-                          historical_date, project),
+                historical_date, project),
             by = c("country_text_id", "historical_date"))
     bool <- !is.na(df$project)
     x[bool, ]
@@ -37,17 +36,42 @@ clean_by_utable.matrix <- function(x, utable, party = FALSE) {
 
 #' @export
 remove_observations <- function(df, remove_bool) {
-    stopifnot(!anyNA(remove_bool))
-    dirt <- df[remove_bool, ]
-    # print_function(dirt)
-    list(clean = df[!remove_bool, ], dirty = dirt)
+    stopifnot(`There are missing values in the remove_bool vector!` = 
+		!anyNA(remove_bool))
+    dirt <- df[remove_bool, , drop = FALSE]
+
+    list(clean = df[!remove_bool, , drop = FALSE], dirty = dirt)
 }
 
 #' @export
-remove_nonc_duplicates <- function(df, col_names) {
+clean_observations <- function(df, bool, function_name, description) {
+	
+	stopifnot(`bool not same length as df` = length(bool) == nrow(df))
+    ll <- remove_observations(df, bool)
+
+    if (any(bool)) {
+        info(paste0("[", function_name, 
+					"] [", description, "] ", 
+					nrow(ll$dirty)))
+        if (!isTRUE(as.logical(Sys.getenv("UNIT_TESTS")))) {
+            stopifnot(
+                `DIRTYLIST does not exist in the global environment` = 
+                exists("DIRTYLIST", envir = .GlobalEnv))
+                
+            DIRTYLIST[[function_name]][[description]] <<- ll$dirty
+        }
+    }
+    return(ll$clean)
+}
+
+
+#' @export
+remove_nonc_duplicates <- function(df, col_names, function_name, description) {
     stopifnot(all(col_names %in% names(df)) | "id" %in% names(df))
+    # Check for C-variable
     if (!all(df$class %in% c("A*", "A", "A,C", "B", "D")))
-        return(list(clean = df, dirty = data.frame()))
+        return(df)
+    # Generate bool for removing non-C
     keep_nonc <- df %>%
         dplyr::filter(class %in% c("A*", "A", "A,C", "B", "D")) %>%
         dplyr::arrange(!!!syms(col_names), dplyr::desc(id)) %>%
@@ -57,28 +81,51 @@ remove_nonc_duplicates <- function(df, col_names) {
         dplyr::filter(class %in% c("A*", "A", "A,C", "B", "D")) %>%
         dplyr::filter(!id %in% keep_nonc) %>%
         pull(id)
-    remove_observations(df, df$id %in% remove_nonc)
+
+    nonc_bool <- df$id %in% remove_nonc
+    stopifnot(`Bool cannot have missingness` = !anyNA(nonc_bool))
+
+    if (any(nonc_bool)) {
+        df %<>% clean_observations(.,
+            bool = nonc_bool, function_name, description)
+    }
+    
+    stopifnot(`df needs to be a data.frame` = is.data.frame(df))
+
+    return(df)
 }
 
 #' @export
-remove_c_duplicates <- function(df, col_names) {
+remove_c_duplicates <- function(df, col_names, function_name, description) {
     stopifnot(all(col_names %in% names(df)) | "id" %in% names(df))
+    # Check for non-C-variable
     if (!all(df$class %in% c("C")))
-        return(list(clean = df, dirty = data.frame()))
+        return(df)
     stopifnot(length(unique(df$id)) == nrow(df))
+
     keep_c <-
         df %>%
         dplyr::arrange(!!!syms(col_names), dplyr::desc(id)) %>%
         dplyr::distinct(!!!syms(col_names),
-                 .keep_all = T) %>% 
+            .keep_all = T) %>% 
         pull(id)
     remove_c <-
         df %>%
         dplyr::filter(!id %in% keep_c) %>%
         pull(id)
-    out <- remove_observations(df, df$id %in% remove_c)
-    stopifnot(no_duplicates(out$clean, col_names))
-    return(out)
+
+    c_bool <- df$id %in% remove_c
+    stopifnot(`Bool cannot have missingness` = !anyNA(c_bool))
+
+    if (any(c_bool)) {
+        df %<>% clean_observations(.,
+            bool = c_bool, function_name, description)
+    }
+
+    stopifnot(`df needs to be a data.frame` = is.data.frame(df))
+    stopifnot(no_duplicates(df, col_names))
+    
+    return(df)
 }
 
 #' @export
@@ -88,7 +135,7 @@ remove_ms_duplicates <- function(df) {
         dplyr::filter(question_type == "S") %>%
         dplyr::arrange(dplyr::desc(id)) %>%
         dplyr::distinct(question_id, country_id, coder_id, historical_date, code,
-                 .keep_all = T) %$% id
+            .keep_all = T) %$% id
     remove_ms <-
         df %>%
         dplyr::filter(question_type == "S") %>%
@@ -126,5 +173,72 @@ print_by_country_year <- function(df) {
         print
 }
 
+#' @export
+fill_empty_columns_a <- function(df) {
+	# Fill in missing values from merge
+	df$coder_id[is.na(df$coder_id)] <- na.omit(df$coder_id)[1]
+	df$question_id[is.na(df$question_id)] <- na.omit(df$question_id)[1]
+	df$data_type[is.na(df$data_type)] <- na.omit(df$data_type)[1]
+	df$confidence[is.na(df$confidence)] <- 100L
+	df$year <- to_year(df$historical_date)
+	df$id <- seq_along(df$id)
+	return(df)
+}
 
+#' @export
+add_cleaning_var_expand_rows <- function(df_to_clean, df_cleaning_var) {
 
+	country_dates <- 
+		dplyr::bind_rows(
+			dplyr::select(df_to_clean, country_id, historical_date),
+			dplyr::select(df_cleaning_var, country_id, historical_date)) %>%
+		dplyr::distinct(.)
+
+	df_to_clean %<>%
+		dplyr::full_join(country_dates, by = c("country_id", "historical_date"))
+
+	df <- dplyr::left_join(df_to_clean, df_cleaning_var, 
+					by = c("country_id", "historical_date"))
+	
+	df %<>% fill_empty_columns_a
+
+	return(df)
+}
+
+#' @export
+interpolate_cleaning_var <- function(df, cols, utable) {
+	interpolate_components(df, cols, utable, keep_nan = TRUE,
+		coder_level = FALSE)
+}
+
+#' @export
+add_cleaning_var <- function(df_to_clean, df_cleaning_var, join_cols = c("country_id", "historical_date")) {
+
+	df <- dplyr::full_join(df_to_clean, df_cleaning_var, 
+					by = join_cols)
+
+	return(df)
+}
+
+#' @export
+cleaning_set_to_nan <- function(df, bool, function_name, description, qtable) {
+	
+	if (qtable$code_col) {
+		df$code[bool] <- NaN
+	} else {
+		df$text_answer[bool] <- "NaN"
+	}
+
+	info(paste0("[", function_name, 
+				"] [", description, "] ", 
+				length(bool)))
+
+    return(df)
+}
+
+#' @export
+drop_extra_rows <- function(df) {
+    stopifnot(`id does not exist in df` = 
+        !is.null(df[["id"]]))
+	df[!is.na(df$id), , drop = FALSE]
+}
