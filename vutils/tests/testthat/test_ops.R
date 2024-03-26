@@ -13,7 +13,6 @@ test_that("%||%", {
     expect_equal(c(NA, 1) %||% 1, c(NA, 1))
     expect_equal(c(NA, NA) %||% 1, 1)
 
-    # Test missing and undefined objects
     expect_equal(sdf %||% 1, 1)
     expect_equal(Call[["x"]] %||% F, F)
 
@@ -30,7 +29,6 @@ test_that("%^%", {
 	expect_equal(c("a", "b") %^% c("a", "b"), c("aa", "bb"))
 	expect_equal(c("a", "b", "c") %^% c("a", "b"), c("aa", "bb", "ca"))
 
-	# I'm OK with this
 	expect_equal(NA %^% "a", "NAa")
 	expect_equal(NULL %^% "a", "a")
 

@@ -36,7 +36,6 @@ test_that("day_mean.data.frame", {
     expect_equal(day_mean(data.frame(), dates[-c(1, 2)]), data.frame())
     expect_equal(day_mean(df, dates[1]), data.frame(x = 1, year = 1900))
 
-    # What happens when we start screwing with our dates.
     df <- data.frame(x = c(1.5, 4, 3.2))
     dates <- as.Date(c("1989-02-03", "1904-05-01", "1906-01-01"))
     weights <- c(as.numeric(diff(dates)), as.Date("1906-12-31") - tail(dates, 1) + 1)
@@ -98,8 +97,6 @@ test_that("day_mean.matrix", {
     expect_equal(day_mean(m[-c(1, 2), -1], dates[-1]), m[-c(1, 2), -1])
 })
 
-
-# Fun bugs be lurking for those who go back before 1900
 test_that("day_mean prior 1900", {
     x <- data.frame(x = 1:3)
     dates <- as.Date(c("1889-01-01", "1889-03-04", "1889-12-31"))

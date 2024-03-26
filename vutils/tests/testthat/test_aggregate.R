@@ -81,8 +81,6 @@ test_that("by_split.matrix", {
     # Error from mc_assert
     expect_error(by_split(x, idx, function(sub.ma) "a" / 1))
 
-    # When not returning a matrix, R will coerce it. We don't force an
-    # error since we want vectors to be coerced into matrices.
     out <- by_split(x, idx, function(sub.ma) "a")
     expect_identical(out, matrix(c("a", "a"), 2, 1))
 })
@@ -102,8 +100,6 @@ test_that("cy.day_mean.data.frame", {
     expect_equal(cy.day_mean(df1, historical_date), y)
     expect_identical(df1, df2)
 
-    # Note, `testthat` breaks on NSE and subsetting, so evaluate
-    # cy.day_mean outside of `expect_equal`
     out <- cy.day_mean(df1[, "x", drop = F], df1$historical_date)
     expect_equal(out, y)
 
@@ -179,7 +175,6 @@ test_that("cy.day_mean.data.frame", {
                       "1903-12-10", "1904-01-01", "1904-02-02",
                       "1904-03-03"))
 
-    # Note the year vector is incorrect!
     df <- data.frame(x = 1:10,
                     y = 11:20,
                     historical_date = dates,
@@ -203,7 +198,6 @@ test_that("cy.day_mean.data.frame", {
                        "1903-12-10", "1904-01-01", "1904-02-02",
                        "1904-03-03")))
 
-    # Note the year vector is incorrect!
     df <- data.frame(x = 1:10,
                      y = 11:20,
                      historical_date = dates,
@@ -289,7 +283,6 @@ test_that("cy.day_mean.data.frame", {
                     y = c(11, 12, 12.91233, 14.83288, 19.74317),
                     year = c(1900, 1901, 1902, 1903, 1904))
 
-    # I want an error if there is already a year column! (we could also drop it.)
     expect_equal(cy.day_mean(df[, c("x", "y", "historical_date",
                                     "year")],
                             historical_date),
@@ -328,4 +321,24 @@ test_that("cy.day_mean.data.frame", {
 
     expect_equal(cy.day_mean(df, historical_date, country_text_id),
                               y, 1.5e-7)
+
+	df <- data.frame(
+		x = 1:3,
+		historical_date = as.Date(c("1900-01-01", "1901-11-30", "1902-02-03")))
+	cy.day_mean(df, historical_date)
+
+
+	df <- data.frame(
+		x = 1:3,
+		historical_date = as.Date(c("1900-01-01", "1901-12-31", "1902-02-03")))
+	cy.day_mean(df, historical_date)
+
+	# Gap year
+	df <- data.frame(
+		x = c(1, 2, 2),
+		historical_date = as.Date(c("1900-06-01", "1902-01-31", "1902-02-03")))
+	cy.day_mean(df, historical_date)
+
+
+	
 })
