@@ -55,7 +55,6 @@ collect_first <- function(v) {
 }
 
 
-
 #' @describeIn collect_aggregation Aggregate by mean
 #' @export
 collect_mean <- function(v) {
@@ -99,7 +98,6 @@ day_mean.numeric <- function(x, dates = NULL) {
 day_mean.integer <- function(x, dates = NULL) {
 	day_mean(as.matrix(x), dates = dates)
 }
-
 
 
 #' Year-wise day-weighted aggregation
@@ -196,6 +194,9 @@ cy.day_mean.data.frame <- function(x, dates = NULL, by = NULL, ...) {
     aggregated.df[[deparse(substitute(by))]] <- sub("[.]\\d*$", "", row.names(aggregated.df))
     row.names(aggregated.df) <- NULL
 
+	# These next lines seems useless, but otherwise there is a bug in numeric values
+	# being slightly different from integer values (e.g. 29.000001 vs. 29) and would not match.
+	# This is a problem passed from C++ using Rcpp.
     if ("country_id" %in% names(aggregated.df) & class(aggregated.df$country_id) == "numeric") {
         aggregated.df[["country_id"]] <- as.numeric(as.integer(aggregated.df[["country_id"]]))
     }

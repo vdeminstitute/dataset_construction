@@ -8,6 +8,8 @@ test_that("reduce",{
     # rownames are country_dates
     # wdata and conf_mat are cbinded.
 
+    # row names dont matter because it uses the vector for decisions.
+
 
     # test 1: interyear change #
     m_input <- data.frame(code_1 = c(2, NA, 2, 2),
@@ -89,7 +91,8 @@ test_that("reduce",{
 
     m_input <- as.matrix(m_input[order(rownames(m_input), decreasing = T), ])
 
-    gaps <- c(F,F,T)
+    # remember this is a reversed table !
+    gaps <- c(F,F,T) # first one is always false
     intra_year <- c(F,F,F)
 
     m_output <- data.frame(code_1 = c(NA,NA),

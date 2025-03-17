@@ -2,8 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{imprint}
 \alias{imprint}
-\title{Returns a logical matrix where the elements that are not NA in the
-columns subsetted by the given logical vector are set as true.}
+\title{Imprint a matrix! (What does that even mean??)}
 \usage{
 imprint(m, v)
 }

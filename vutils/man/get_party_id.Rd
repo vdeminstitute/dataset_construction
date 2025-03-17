@@ -15,6 +15,9 @@ Integer vector of length 1 to 6 separated by space.
 \description{
 Extract party_id from the string
 }
+\details{
+It works only for the strings that are used in the party survey
+}
 \examples{
 get_cpid("RUS 2244 2016-09-18")
 }

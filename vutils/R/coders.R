@@ -45,6 +45,7 @@ traverse <- function(x, root = 20) {
     return(aux)
 }
 
+
 #' @title Delete a question from \code{coder_table}
 #' @param question_id A V-Dem \code{question_id}
 #' @param db A dataset construction database connection

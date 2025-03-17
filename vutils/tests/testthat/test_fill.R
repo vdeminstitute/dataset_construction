@@ -7,6 +7,7 @@ test_that("interpolate default method", {
 
     expect_equal(out, y)
 
+    # Sanity check that we cloned our object
     expect_false(identical(out, x))
 
     x <- c(2, NA, 3)
@@ -29,6 +30,7 @@ test_that("interpolate default method", {
     y <- 1:3
     expect_equal(interpolate(x), y)
 
+    # Nothing will happen with lists
     x <- list(1, NA, 2)
     y <- list(1, NA, 2)
     expect_equal(interpolate(x), y)
@@ -43,6 +45,7 @@ test_that("interpolate a matrix", {
 
     expect_equal(out, y)
 
+    # Sanity check that we cloned our object
     expect_false(identical(out, x))
 
     # Ensure that rownames are preserved
@@ -62,6 +65,7 @@ test_that("interpolate a data frame", {
 
     expect_equal(out, y)
 
+    # Sanity check that we cloned our object
     expect_false(identical(out, x))
 
     x <- data.frame(x = complex(1, 2))
@@ -79,6 +83,7 @@ test_that("locf vectors/lists", {
 
     expect_equal(out, y)
 
+    # Sanity check that we cloned our object
     expect_false(identical(out, x))
 
     x <- c(NA, 2, 3, NA, NA)
@@ -102,6 +107,7 @@ test_that("locf data frame", {
 
     expect_equal(out, y)
 
+    # Sanitfy check that we cloned our object
     expect_false(identical(out, x))
 
     x <- data.frame(a = complex(1))
@@ -116,6 +122,7 @@ test_that("locf matrix", {
 
     expect_equal(out, y)
 
+    # Sanity check that we cloned our object
     expect_false(identical(out, x))
 
     # Ensure that rownames are preserved

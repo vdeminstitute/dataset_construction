@@ -15,12 +15,11 @@ s_union(...)
 }
 \section{Warning}{
  The resulting output object will not inherit the
-user-defined attributes of the input objects.
+    user-defined attributes of the input objects.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Also, as a further note, input objects are expected to be of
-the same type and are therefore exposed to R's normal system of
-type coercion.
-}\if{html}{\out{</div>}}
+    Also, as a further note, input objects are expected to be of
+    the same type and are therefore exposed to R's normal system of
+    type coercion.
 }
 
 \examples{

@@ -33,19 +33,24 @@ test_that("ordinalize", {
     expect_equal(ordinalize(v, categories = 4), out)
     expect_equal(ord_4C(v), out)
 
+    # Split off ord_3C into a separate test since it has different
+    # output than `ordinalize` by default
     out <- c(0, 0, 0, 0, .5, .5, .5, 1, 1, 1, 1)
     expect_equal(ordinalize(v, categories = 3), out)
     
+    # Let's try changing max
     v <- seq(0, 2, .2)
     out <- c(0, 0, 0, .25, .25, .5, .5, .75, .75, 1, 1)
     expect_equal(ordinalize(v, categories = 5, max = 2), out)
     expect_equal(ord_5C(v, max = 2), out)
 
+    # Finally, what happens when we screw with `vec`
     v <- 1:5
     out <- c(0, 0, 0, .25, .25)
     
     expect_equal(ord_5C(v, min = 1, max = 5, vec = c(0, 3, 5)), out)
 
+    # Check some errors
     expect_error(ord_5C(v, max = 1))
     expect_error(ord_5C(v, min = 2))
 
@@ -88,10 +93,11 @@ test_that("s_union", {
     expect_equal(s_union(NA), NA)
     expect_equal(s_union(list(a = 5, b = 6)), list(a = 5, b = 6))
     
+    # we lose attributes in this function:
     expect_equal(s_union(list(a = 5, b = 6), list(a = 5, c = 6, d = 7)), 
                 list(5, 6, 7))
     expect_equal(s_union(c(a = 5, b = 6), c(c = 5, d = 6)), c(5, 6))
-
+    # we coerce output types:
     expect_equal(s_union(c(1, 2), list(1, 2)), list(1, 2))
     expect_equal(s_union(c(1, 2), list(1, 2)), list(1, 2))
     expect_equal(s_union(c("1", "2", "3"), c(1, 2, 3)), c("1", "2", "3"))

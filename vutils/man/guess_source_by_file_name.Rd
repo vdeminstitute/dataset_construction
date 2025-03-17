@@ -13,10 +13,14 @@ guess_source_by_file_name(file_name = "area")
 Character vector depending on the length of the input.
 }
 \description{
-Pick external source
+Guesses the name of external source basing on the file name
 }
 \details{
 For now, it's the best way to identify the name of the source
 although it is not recommended to use it in different context. This function is
 vectorised, hence it can be used not only as a part of other functions but on its own.
+}
+\examples{
+\dontrun{guess_source_by_file_name(list.files("~/Documents/edata/2021/upd", full.names = TRUE))}
+
 }

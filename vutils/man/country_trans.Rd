@@ -12,7 +12,7 @@ country_trans(v, db_internal = pg_connect("vdem_data"), full = FALSE)
 \item{db}{database connection.}
 }
 \description{
-Given a vector of \code{country_ids}s, \code{country_text_ids}, and
+Given a vector of \code{country_ids}s, \code{country_text_ids}, and 
 \code{country_names} returns all other available transformations.
 }
 \examples{

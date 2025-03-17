@@ -75,7 +75,11 @@ stretch.matrix <- function(x, by, gaps = TRUE, rule_366 = TRUE, preserve.na = TR
 
     # If TRUE we preserve NA from `x` and carry it forward in the
     # full.ma matrix since we assume that it represents missingness
-    # that we want retained. 
+    # that we want retained. Unfortunately, we're running up against
+    # the R type system here so we have no meaningful way to
+    # distinguish NAs from expanding and NAs originally in `x`. As an
+    # ugly hack, replace the NAs from `x` with Inf and convert back in
+    # the end.
     if (isTRUE(preserve.na)) {
         b <- rowSums(is.na(x)) == ncol(x)
 
@@ -140,6 +144,7 @@ stretch.matrix <- function(x, by, gaps = TRUE, rule_366 = TRUE, preserve.na = TR
     if (isTRUE(interpolate)) {
         years <- to_year(dates)
 
+        # We really should think about simplifying this
         full.ma <- by_split(full.ma, factors %^% years,
                            methods::getFunction("interpolate"))
         full.ma <- full.ma[order(rownames(full.ma)),, drop = F]

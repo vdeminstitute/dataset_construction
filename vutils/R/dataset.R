@@ -86,7 +86,16 @@ find_vars <- function(vari, qtable) {
 #' @describeIn trans_helpers Translate question tag names to question labels
 #' @export
 to_qlabels <- function(v, ttable) {
+    # We call this function with the columns of a data.frame, so strip
+    # out all the generated codelow/high, sd, mean etc etc.
     basetags <- get_root(v)
+
+    # Unlike to_qids and to_qnames, some of our tag names may not be
+    # in our lookup table. Instead of erroring, just return an empty
+    # string unless it's historical in which case try the v2 form.
+    #basetags <- ifelse(is.hist(basetags) & !basetags %in% ttable$name,
+    #                  "v2" %^% substring(basetags, 3),
+    #                  basetags)
 
     out <- character(length(v))
     out[basetags %in% ttable$name] <-

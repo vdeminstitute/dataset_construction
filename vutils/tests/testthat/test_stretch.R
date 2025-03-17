@@ -1,5 +1,6 @@
 
  test_that("default stretch", {
+ 	# make dummy cu table
  	utable <- data.frame(
 		country_text_id = c(rep("DEU", 10), rep("USA", 4)),
 		year = c(seq(1940, 1944, 1), seq(1949, 1953, 1), seq(2013, 2016, 1)),
@@ -18,6 +19,7 @@
      rownames(out) <- by
      expect_equal(stretch(x, by, utable = utable), out)
 
+     # Gaps, gaps, gaps, gaps, gaps, gaps, gaps, gaps
      x <- matrix(1:9, 3, 3, byrow = T,
                dimnames = list(c("DEU 2010-12-31", "DEU 2014-12-31", "DEU 2016-12-31"),
                                NULL))
@@ -83,6 +85,8 @@
      #check
      expect_equal(stretch(x, by), out)
 
+     # Finally, check that we don't error on single col matrix (i.e.,
+     # dropping matrix class)
      m <- matrix(1:3, 3, 1)
      rownames(m) <- c("DEU 1910-01-01", "DEU 1908-01-01", "USA 2015-01-01")
 
@@ -143,6 +147,7 @@
 
      expect_equal(stretch(x, by, interpolate = T), y)
 
+     # Sanity check, behavior should default to normal locf
      y[2, 1] <- 1
      expect_equal(stretch(x, by, interpolate = F), y)
 
@@ -151,6 +156,7 @@
      y[2:3, 1] <- NA
      expect_equal(stretch(x, by, preserve.na = T, interpolate = T), y)
 
+     # Except when we don't want to preserve NA
      y[1:3, 1] <- 1
      expect_equal(stretch(x, by, preserve.na = F, interpolate = T), y)
 

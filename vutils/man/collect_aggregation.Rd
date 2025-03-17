@@ -26,10 +26,10 @@ country-date to country-year level.
 }
 \details{
 When aggregating per year, the base R functions may return
-a different type than the original input vector. This will
-cause the \code{summarise} family of functions to error
-out. The collection of helper functions simply take care of
-missingness and \code{NA} as appropriate.
+    a different type than the original input vector. This will
+    cause the \code{summarise} family of functions to error
+    out. The collection of helper functions simply take care of
+    missingness and \code{NA} as appropriate.
 }
 \section{Functions}{
 \itemize{

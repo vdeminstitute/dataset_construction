@@ -36,30 +36,29 @@ country-date reduced matrix to the full time series.
 }
 \details{
 Given a matrix, \code{x}, with country-date rownames and a
-character vector of country-dates that should be added
-(\emph{i.e.,} expanded to), \code{stretch} will output a matrix
-with \code{ncol(x)} columns and \code{length(union(by,
+    character vector of country-dates that should be added
+    (\emph{i.e.,} expanded to), \code{stretch} will output a matrix
+    with \code{ncol(x)} columns and \code{length(union(by,
     rownames(x)))} rows. The rows shared between the output matrix
-and \code{x} will be filled in with the values from \code{x}
-before calling \code{\link{locf}}.
+    and \code{x} will be filled in with the values from \code{x}
+    before calling \code{\link{locf}}.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Missingness will be filled in by \code{country_text_id}, sorted
-by \code{historical_date}. If \code{gaps} is \code{TRUE}, gaps
-will be preserved such that if there is more than a 365 day
-difference between two observations, the last observation will
-not be carried forward.
+    Missingness will be filled in by \code{country_text_id}, sorted
+    by \code{historical_date}. If \code{gaps} is \code{TRUE}, gaps
+    will be preserved such that if there is more than a 365 day
+    difference between two observations, the last observation will
+    not be carried forward.
 
-When \code{preserve.na} is \code{TRUE}, \code{NA} in the
-original matrix, \code{x}, will be preserved and propagated in
-the output matrix.
+    When \code{preserve.na} is \code{TRUE}, \code{NA} in the
+    original matrix, \code{x}, will be preserved and propagated in
+    the output matrix.
 
-If \code{interpolate} is \code{TRUE}, before calling
-\code{\link{locf}}, values in the output matrix will be first
-interpolated per country-year using the
-\code{\link{interpolate}} --- specifically, this means that if
-there's a single non-missing observation on "12-31", the year
-will first be backfilled.
-}\if{html}{\out{</div>}}
+    If \code{interpolate} is \code{TRUE}, before calling
+    \code{\link{locf}}, values in the output matrix will be first
+    interpolated per country-year using the
+    \code{\link{interpolate}} --- specifically, this means that if
+    there's a single non-missing observation on "12-31", the year
+    will first be backfilled.
 }
 \examples{
 m <- matrix(1:2, 2, 1, dimnames = list(c("AFG 1790-12-31", "AFG 1791-12-31"),

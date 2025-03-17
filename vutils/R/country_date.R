@@ -11,6 +11,23 @@
 #'     resulting string is mostly used as the rownames of matrices in
 #'     order to identify each country-date observation.
 #'
+#'     Ideally, we would create a \code{country_date} S3 class so that
+#'     we can avoid the performance cost of constantly checking
+#'     whether our country-date strings are properly
+#'     formatted. Unfortunately, while R allows character vectors with
+#'     additional attributes to be set as the rownames of matrices,
+#'     when subsetting a matrix the resulting rownames loses all of
+#'     those attributes. We can partially avoid the performance
+#'     problem in a less elegant with memoisation.
+#'
+#' @section Warning: No attempt is currently made to ensure that the
+#'     date portion of a country-date string is a valid date beyond
+#'     checking the number of digits.
+#'
+#'     \code{is_country_date} will also always return \code{FALSE} for
+#'     missing values; however, \code{NULL} will return
+#'     \code{logical(0)}.
+#'
 #' @return Logical vector.
 #'
 #' @examples
@@ -40,7 +57,12 @@ assert_str <- function(x, party = FALSE) {
 #' @param na.rm Whether to set \code{NA} values to false.
 #'
 #' @details Vignettes are identified by unique constructed from the
-#'     vignette type, threshold, and version.
+#'     vignette type, threshold, and version.  Note, we merge
+#'     historical vignettes into contemporary when the question text
+#'     hasn't changed --- which so far includes contemporary pilot
+#'     vignettes only --- meaning that the raw data contained in a
+#'     vignette row in a V-Dem country-date data matrix may not match
+#'     directly to the raw data in our database.
 #'
 #' @return Logical vector
 #'
@@ -62,6 +84,8 @@ is_vignette <- function(x, na.rm = T) {
 #' Extract party_id from the string
 #'
 #' @param x Character vector
+#'
+#' @details It works only for the strings that are used in the party survey
 #'
 #' @return Integer vector of length 1 to 6 separated by space. 
 #' 

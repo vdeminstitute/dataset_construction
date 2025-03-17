@@ -8,7 +8,7 @@
 #' @param x CharacterVector of question names. For example, the column
 #'     names from the final V-Dem DS.
 #'
-#' @section Warning: We will only transform V-Dem
+#' @section Warning: Here be dragons. We will only transform V-Dem
 #'     variable tags, meaning that we'll attempt to match \code{v\\d}
 #'     or \code{e_v\\d}, while always excluding the direct democracy
 #'     variables (v2dd* or v2xdd*) since we never create separate
@@ -66,6 +66,11 @@ is.hist <- function(x) {
 #' @param ttable Translation table listing all contemporary (v2) and
 #'     historical (v3) variable tag names (typically our
 #'     question_table).
+#'
+#' @section Warning: \code{is.shared_tag} works only with v2/v3 tag
+#'     names. So older variable names lacking the necessary prefix
+#'     will always return FALSE, which is actually what we want
+#'     because they only exist in the deprecated contemporary surveys.
 #'
 #' @examples
 #' vars <- c("v2clacfree", "v3clacfree", "v3elage", "v2elpdcamp")

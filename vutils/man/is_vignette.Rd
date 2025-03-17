@@ -19,7 +19,12 @@ Indicates whether a country-date represents a vignette.
 }
 \details{
 Vignettes are identified by unique constructed from the
-vignette type, threshold, and version.
+    vignette type, threshold, and version.  Note, we merge
+    historical vignettes into contemporary when the question text
+    hasn't changed --- which so far includes contemporary pilot
+    vignettes only --- meaning that the raw data contained in a
+    vignette row in a V-Dem country-date data matrix may not match
+    directly to the raw data in our database.
 }
 \examples{
 is_vignette(c("AFG 1900-01-01", "historical_1_v2", "pilot_1_v1"))

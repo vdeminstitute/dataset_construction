@@ -148,7 +148,7 @@ accountability_submit_job <- function(v, directory = Sys.getenv("ACC_DIR"),
         "; export rscript=", rscript,
         "; sbatch -J ", v, " -A ", account," -o ", logfile,
         " -e ", logfile, " --time=", timeout,
-        " --mail-type=FAIL -N 1 --exclusive ", script, "'"))
+        " --mail-type=FAIL -N 1 --exclusive --ntasks-per-node=4", script, "'"))
 
     info(sprintf("Submitted %s with %s timeout", v, timeout))
 }
@@ -207,7 +207,8 @@ components_running <- function(db, var, codebook, qtable) {
         arrange(desc(iter)) %>%
         filter(row_number() == 1)
     }) %>%
-    bind_rows()
+    bind_rows() %>% 
+    select(job_id, name, iter, status)
     
     return(df)
 }
@@ -228,7 +229,8 @@ components_done <- function(db, var, codebook, qtable) {
         arrange(desc(iter)) %>%
         filter(row_number() == 1)
     }) %>%
-    bind_rows()
+    bind_rows() %>% 
+    select(job_id, name, iter, status)
     
     return(df)
 }
@@ -238,6 +240,8 @@ components_done <- function(db, var, codebook, qtable) {
 mm_running <- function(db, codebook, qtable) {
 
     running <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status != 'done';")
+    finished <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status = 'done';")
+    running <- running %>% filter(!task_name %in% finished$task_name)
 
     df <- lapply(running$task_name, function(i) {
     x <- mm_log_table(file.path(Sys.getenv("MM_SSH_DIR"), "logs"), i)
@@ -245,7 +249,8 @@ mm_running <- function(db, codebook, qtable) {
         arrange(desc(iter)) %>%
         filter(row_number() == 1)
     }) %>%
-    bind_rows()
+    bind_rows() %>% 
+    select(job_id, name, iter, status)
     
     return(df)
 }
@@ -263,7 +268,8 @@ mm_done <- function(db, codebook, qtable) {
         arrange(desc(iter)) %>%
         filter(row_number() == 1)
     }) %>%
-    bind_rows()
+    bind_rows() %>% 
+    select(job_id, name, iter, status)
     
     return(df)
 }

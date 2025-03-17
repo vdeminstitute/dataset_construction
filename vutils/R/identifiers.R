@@ -55,6 +55,11 @@ add_country_cols <- function(df, country) {
 #'     containing the columns specified by \code{to} and \code{by}
 #' @param by Character. Column key for translation.
 #'
+#' @section Warning: This function is meant to serve as a constructor
+#'     for identifier specific translation functions --- for example,
+#'     see the function \code{\link{to_qids}}. It's not
+#'     particularly useful or inuitive for direct use.
+#'
 #' @examples
 #' \dontrun{
 #' # Given a vector of question IDs saved to qids and we want the

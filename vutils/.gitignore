@@ -8,5 +8,4 @@ vutils.Rcheck/
 /**/*.gcda
 /**/*.gcno
 /**/*.directory
-vutils_*.tar.gz
 *Rproj*

@@ -7,7 +7,7 @@
 make_900cols(df, var, interpolate = FALSE)
 }
 \arguments{
-\item{df}{Input data.frame that should contain the column of interest
+\item{df}{Input data.frame that should contain the column of interest 
 and case identifiers: country_text_id and historical date}
 
 \item{var}{Variable to be copied 900 times}

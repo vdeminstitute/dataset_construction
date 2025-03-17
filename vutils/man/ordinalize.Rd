@@ -40,17 +40,16 @@ automatic equal-spaced intervals.
 }
 \details{
 \code{ordinalize} should not be confused with the
-\code{\link{ord}} function. The latter ordinalizes the MM
-output using an ordinal scale transformation to map back to the
-original ordinal answer categories. The former simply splits up
-a numeric vector into equal intervals and assigns the given
-number of categories.
+    \code{\link{ord}} function. The latter ordinalizes the MM
+    output using an ordinal scale transformation to map back to the
+    original ordinal answer categories. The former simply splits up
+    a numeric vector into equal intervals and assigns the given
+    number of categories.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Note, ordinalization is is done using left-open intervals. For
-example, the lowest category from the default \code{ord_5C}
-output is 0 corresponding to \code{N <= .2}, the second is 1
-for values \code{.2 < N <= .5}, and etc etc.
-}\if{html}{\out{</div>}}
+    Note, ordinalization is is done using left-open intervals. For
+    example, the lowest category from the default \code{ord_5C}
+    output is 0 corresponding to \code{N <= .2}, the second is 1
+    for values \code{.2 < N <= .5}, and etc etc.
 }
 \section{Functions}{
 \itemize{
@@ -64,14 +63,14 @@ V-Dem rules. See the section, Details.
 }}
 \section{\code{ord_3C}}{
 
-The \code{ord_3C} by default operates slightly different from the
-other convenience functions. Rather than being a balanced
-ordinalization (\emph{i.e.,} equally spaced bins determining
-membership in each category), \code{ord_3C} passes in a \code{vec}
-of \code{c(0, .25, .5, 1)}. The rationale is that 3 category
-versions of indices are meant to represent "Autocratic" (0 -
-.25), "Electoral Authoritarian" (.25 - .5), and "Minimally
-Democratic" (.5 - 1).
+    The \code{ord_3C} by default operates slightly different from the
+    other convenience functions. Rather than being a balanced
+    ordinalization (\emph{i.e.,} equally spaced bins determining
+    membership in each category), \code{ord_3C} passes in a \code{vec}
+    of \code{c(0, .25, .5, 1)}. The rationale is that 3 category
+    versions of indices are meant to represent "Autocratic" (0 -
+    .25), "Electoral Authoritarian" (.25 - .5), and "Minimally
+    Democratic" (.5 - 1).
 }
 
 \examples{

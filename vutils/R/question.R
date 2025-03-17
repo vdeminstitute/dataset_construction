@@ -9,13 +9,23 @@
 #' @param ttable \code{question_id} translation table (\emph{e.g.},
 #'     the question table).
 #'
-#' @details \code{normalize_qids} is meant to
+#' @details \code{normalize_qids} is fairly inflexible and is meant to
 #'     work directly with the question table. Thus, \code{ttable}
 #'     requires two columns: \code{name} and \code{question_id}. We
 #'     determine whether an historical \code{question_id} has a
 #'     matching contemporary \code{question_id} by checking the root
 #'     tag --- the portion of the tag after removing the \code{v\\d}
 #'     suffix.
+#'
+#' @section Warning: We are currently not checking whether matching
+#'     historical and contemporary \code{question_id}s have the same
+#'     \code{K} (\emph{i.e.}, number of answer categories). This is
+#'     mostly because our information on \code{K} is fairly
+#'     incomplete; plus, there are a number of variables such as
+#'     \code{v3lgbicam} which diverge from contemporary and yet we
+#'     still want to merge them together.
+#'
+#'     This is something that can be improved in the future.
 #'
 #' @examples
 #' ttable <- data.frame(question_id = 1:3,
@@ -80,6 +90,7 @@ country_trans <- function(v, db_internal = pg_connect("vdem_data"), full = FALSE
     if (is.numeric(v))
         return(country[country$country_id %in% v, ])
 
+    # We loop because we want the results to be in the same order
     out <- lapply(v, function(i) {
         if (grepl("^[[:digit:]]+$", i)) {
             if (!i %in% country$country_id)

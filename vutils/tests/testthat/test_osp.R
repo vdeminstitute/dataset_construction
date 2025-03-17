@@ -38,6 +38,7 @@ test_that("osp for ordinal vars", {
 
     osp_out <- 0 * out_0 + 1 * out_1 + 2 * out_2 + 3 * out_3
 
+    # gives same estimates, but expect_equal fails due to length missmatch. I don't get why though
     expect_equal(osp(z, mu), osp_out)
 
 
@@ -72,6 +73,8 @@ test_that("osp for binary vars", {
     expect_equal(out, pnorm(z + as.vector(g)))
     expect_false(identical(out, z))
 
+    # Finally, let's test that colnames are also presvered for binary
+    # vars
     z <- matrix(rnorm(18), 6, 3, dimnames = list(NULL, c("a", "b", "c")))
     g <- matrix(rnorm(6), 6, 1)
 

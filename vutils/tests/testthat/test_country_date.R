@@ -1,6 +1,7 @@
 test_that("is_country_date_regular", {
     expect_true(is_country_date("SWE 1960-12-31"))
 
+    # We're not currently checking if the date is valid
     expect_true(is_country_date("SVN 2002-99-99"))
 
     expect_equal(is_country_date(c("AFG 1901-01-01", NA_character_)), c(T, F))
@@ -101,7 +102,7 @@ test_that("to_year", {
     expect_equal(to_year(as.Date("1900-01-01")), 1900L)
     expect_equal(to_year(as.Date("2016-11-24")), 2016L)
     expect_equal(to_year(as.Date(c(NA, "1995-01-01"))), c(NA_integer_, 1995L))
-    expect_equal(to_year(as.Date("16-12-14")), 16L)
+    expect_equal(to_year(as.Date("16-12-14")), 16L) # This is weird, but it's a valid date
 
     expect_error(to_year(2016))
     # expect_error(to_year("2016-11-24"))
@@ -113,6 +114,7 @@ test_that("create_idx", {
     x <- c(1900, 1901, 1903, 1904, 1906, 1907)
     expect_equal(create_idx(x), c(1, 1, 2, 2, 3, 3))
 
+    # Hope your input is sorted properly
     x <- c(1999, 1998, 1997)
     expect_equal(create_idx(x), c(1, 1, 1))
 

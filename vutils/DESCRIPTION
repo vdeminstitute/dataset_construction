@@ -1,41 +1,23 @@
 Package: vutils
 Type: Package
 Title: V-Dem Helper Functions
-Version: 14.0
+Version: 15.0
+Date: 2025-03-17
 Authors@R: 
-       c(person(
-              "Linnea", "Fox", 
-              role = "cre", 
-              email = "linnea.fox@v-dem.net", 
-              comment = "Active Maintainer"),
-       person(
-              "Oskar", "Rydén", 
-              role = "aut", 
-              comment = "Contributor"),
-       person(
-              "Joshua", "Krusell", 
-              role = "aut", 
+       c(person("Linnea", "Fox", NULL, "linnea.fox@v-dem.net", role = c("cre", "aut"), comment = "Active Maintainer"),
+       person("Oskar", "Rydén", role = "aut", comment = "Contributor"),
+       person("Joshua", "Krusell", role = "aut", 
               comment = "Original creator and author"),
-       person(
-              "Johannes", "von Römer", 
-              role = c("aut"),
-              comment = "Author"),
-       person(
-              "Marcus", "Tannenberg", 
-              role = "ctb", 
-              comment = "unit tests"),
-       person(
-              "V-Dem Institute", 
-              role = c("cph", "fnd")))
+       person("Johannes", "von Römer", NULL, role = "aut"),
+       person("Marcus", "Tannenberg", role = "ctb", comment = "unit tests"),
+       person("V-Dem Institute", role = c("cph", "fnd")))
 Encoding: UTF-8
 ByteCompile: true
 Repository: aloha
-Description: Internal package for organizing Rcpp/R functions used in
-             the V-Dem DS construction process.
+Description: Internal package for organizing Rcpp/R functions used in the V-Dem DS construction process.
 Depends: R (>= 4.0.3), vbase
 License: GPL (>= 2) | file LICENSE
 Imports: Rcpp (>= 0.12.15), coda, tools, magrittr, methods, dplyr, utils, stats, RCurl, crayon, data.table
 Suggests: openxlsx, readstata13, DBI, RPostgreSQL, haven, testthat, readxl, stringr, parallel
 LinkingTo: Rcpp
-Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

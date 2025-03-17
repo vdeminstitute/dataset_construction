@@ -18,18 +18,17 @@ column-wise.
 }
 \details{
 The differences between \code{locf} and \code{interpolate}
-are frustratingly trivial; however, we need the
-\code{interpolate} functions in situations where the only
-observation is at the default date ("-12-31"), which should
-then represent the entire year.
+    are frustratingly trivial; however, we need the
+    \code{interpolate} functions in situations where the only
+    observation is at the default date ("-12-31"), which should
+    then represent the entire year.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{For example, when conforming multiple country-date level
-variables, missingness introduced by merging should be first
-interpolated before being expanded so as to better reflect the
-observation at the default date representing the entire year,
-rather than the previous year's default date observation being
-carried forward until "-12-30".
-}\if{html}{\out{</div>}}
+    For example, when conforming multiple country-date level
+    variables, missingness introduced by merging should be first
+    interpolated before being expanded so as to better reflect the
+    observation at the default date representing the entire year,
+    rather than the previous year's default date observation being
+    carried forward until "-12-30".
 }
 \examples{
 df <- data.frame(x = c(1, NA, 2),

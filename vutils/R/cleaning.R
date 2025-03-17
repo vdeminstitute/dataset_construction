@@ -13,6 +13,7 @@ clean_by_utable.data.frame <- function(x, utable, party = FALSE) {
     stopifnot(!any(is.na(x$country_id)))
     dplyr::inner_join(x, utable[, "country_id", "year"],
         by = c("country_id", "year")) %>%
+    # This may remove tibble grouping, be careful!
     as.data.frame(stringsAsFactors = FALSE)
 }
 
@@ -53,6 +54,7 @@ clean_observations <- function(df, bool, function_name, description) {
         info(paste0("[", function_name, 
 					"] [", description, "] ", 
 					nrow(ll$dirty)))
+        # If not in unit testing mode send to DIRTYLIST
         if (!isTRUE(as.logical(Sys.getenv("UNIT_TESTS")))) {
             stopifnot(
                 `DIRTYLIST does not exist in the global environment` = 
@@ -233,6 +235,8 @@ cleaning_set_to_nan <- function(df, bool, function_name, description, qtable) {
 				"] [", description, "] ", 
 				length(bool)))
 
+	# Yes we return the original df!
+	# clean_observations is only used for the DIRTYLIST and printing the message!
     return(df)
 }
 

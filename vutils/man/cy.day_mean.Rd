@@ -28,9 +28,9 @@ to country-year using the aggregate function \code{\link{day_mean}}.
 }
 \details{
 \code{to_cy} aggregates from country-date level to
-country-year level by splitting the data year-wise based on the
-specified \code{DateVector}. The aggregation is done by the
-\code{day_mean} function, which takes a day-weighted average.
+    country-year level by splitting the data year-wise based on the
+    specified \code{DateVector}. The aggregation is done by the
+    \code{day_mean} function, which takes a day-weighted average.
 }
 \examples{
 df <- data.frame(historical_date = as.Date(c("1900-01-01", "1900-03-01", "1900-07-11")),

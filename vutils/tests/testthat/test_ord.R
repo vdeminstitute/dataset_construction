@@ -15,6 +15,7 @@ test_that("ord for ordinals", {
     
     # non static
     set.seed(123)
+    # numer of rows/draws
     N <- 5
     
     # country_dates and generated point estimates
@@ -76,6 +77,8 @@ test_that("ord for binary vars", {
     expect_equal(out, R_out)
     expect_false(identical(out, z))
 
+    # Finally, let's test that colnames are also preserved for binary
+    # vars
     z <- matrix(rnorm(18), 6, 3, dimnames = list(NULL, c("a", "b", "c")))
     g <- matrix(rnorm(6), 6, 1)
 

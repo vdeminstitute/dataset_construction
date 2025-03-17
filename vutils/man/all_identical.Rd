@@ -11,7 +11,7 @@ all_identical(...)
 }
 \value{
 A single boolean indicating whether all of the provided
-arguments are identical to each other.
+    arguments are identical to each other.
 }
 \description{
 Given an initial function argument, \code{all_identical} loops
