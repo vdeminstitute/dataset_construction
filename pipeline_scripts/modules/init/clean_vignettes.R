@@ -171,7 +171,6 @@ main <- function(vtable, qtable, vdata) {
 
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
 
     # Global variables

@@ -66,12 +66,13 @@ vdem <- c("id", "x1", "x2",
 x3_sections <-
     c("x3regime", "x3account", "x3chiefex", "x3neopat", "x3civlib",
         "x3excl", "x3corr", "x3womemp", "x3rol", "x3dd", "x3cs",
-        "x3elec", "x3partyinst", "x3condemdim", "x3acfree")
+        "x3elec", "x3partyinst", "x3condemdim", "x3acfree",
+        "x3eii", "x3stock")
 sm_sections <- c("wsmcio", "wsmdmf", "wsmstatereg", "wsmomp", "wsmsc")
 demed_sections <- c("demed","demedCurrAllSubj","demedCurrSpecSubj",
     "demedmedia","demedschools","demedteachers")
 ps_sections <- c("partysystems")
-e_sections <- c("e1", "e5", "e6", "e7", "e9", "e12", "e13", "e14", "e15",
+e_sections <- c("e1", "e5", "e6", "e7", "e9", "e12", "e13", "e14", "e15", "e16",
                 "eb1", "eb2", "region", "eb3", "eb5", "eb6", "eb7", "eb8")
 # The ordering of section in cb determines the order in the dataset
 cb <- c(vdem, x3_sections, ps_sections, sm_sections, demed_sections, e_sections)
@@ -130,6 +131,12 @@ create_variable_label_table <- function(qtable) {
 }
 
 qlabels <- create_variable_label_table(qtable)
+ovexist <- data.frame(
+    question_id = c(4827,4828,4829,4830),
+    name = c("e_ovexist_0", "e_ovexist_1", "e_ovexist_2", "e_ovexist_3"),
+    label = c("Intrastate State-based Violence", "Interstate State-based Violence", "Non-state Violence", "One-sided Violence"))
+qlabels <- rbind(qlabels, ovexist)
+
 qtable <- subset(qtable, name != "histname")
 identifiers <- c('country_name','country_text_id','country_id','year',
     'historical_date','project','historical','histname','codingstart',
@@ -199,6 +206,8 @@ fu <- function(v) {
 
 # Read and extract objects
 llf <- mclapply(deps, fu, mc.cores = 8, mc.preschedule = FALSE)
+# -- if you want save an intermediary file of llf, do it here and read it in later.
+write_file(llf, file.path(ROOTDIR, "llf", "llf.rds"), dir_create = TRUE)
 
 # load cd files
 #-------------------------------------------------------------------------------
@@ -218,8 +227,6 @@ subset(tasks, task_id %in% missing_deps, select = c(
 
 cd_files <- cd_files[!bool]
 df_cd <- full_join_vdem_tree(cd_files)
-rm(cd_files)
-
 # load cy files
 #-------------------------------------------------------------------------------
 # extract cy data.frames:
@@ -236,14 +243,6 @@ subset(tasks, task_id %in% missing_deps, select = c(
 
 cy_files <- cy_files[!bool]
 df_cy <- full_join_vdem_tree(cy_files)
-rm(cy_files)
-
-# ------------------------------------------------------------------------------
-# Save 
-write_file(df_cy, file.path(ROOTDIR, "llf", "df_cy.rds"), dir_create = TRUE)
-write_file(df_cd, file.path(ROOTDIR, "llf", "df_cd.rds"), dir_create = TRUE)
-
-rm(llf)
 # ------------------------------------------------------------------------------
 # Read in Exclusion data
 # -- merge cd
@@ -258,24 +257,6 @@ df_cd <- merge(
 df_cy <- merge(
     x = df_cy,
     y = subset(read_file(file.path(ROOT, "exclusion", "exclusion_cy.rds")),
-            select = c(-historical_date, -country_name)),
-    by = c("country_id","year"),
-    all = TRUE)
-
-# ------------------------------------------------------------------------------
-# Read in Regimes data
-# -- merge cd
-df_cd <- merge(
-    x = df_cd,
-    y = subset(read_file(file.path(ROOT, "regimes", "regimes_cd.rds")), 
-            select = c(-country_name, -year)),
-    by = c("country_id", "historical_date"),
-    all = TRUE)
-
-# -- merge cy
-df_cy <- merge(
-    x = df_cy,
-    y = subset(read_file(file.path(ROOT, "regimes", "regimes_cy.rds")),
             select = c(-historical_date, -country_name)),
     by = c("country_id","year"),
     all = TRUE)
@@ -308,6 +289,9 @@ df_cy <- merge(
     all = TRUE)
 
 stopifnot(!anyNA(df_cy$country_id))
+stopifnot(!anyNA(df_cd$country_id))
+stopifnot(!anyNA(df_cy$year))
+stopifnot(!anyNA(df_cd$historical_date))
 #-------------------------------------------------------------------------------
 # Clean loaded files
 clean_process <- function(df) {
@@ -419,12 +403,18 @@ df_cd <-
     left_join(idents_df, by = c("country_id", "year")) %>%
     left_join(gaps_df, by = c("country_id"))
 
-
 # Merge e-data into cy
 #-------------------------------------------------------------------------------
 e_data <- read_file(file.path(ROOT, "external", "e_data.rds"))
 stopifnot(no_duplicates(e_data, c("country_id", "year")))
 df_cy <- left_join(df_cy, e_data, by = c("country_id", "year"))
+
+tt_fp <- list.files(file.path(
+    sprintf("~/data/data_team/external_data/external_data_%s/identifiers", Sys.getenv("NEWEST_YEAR"))), 
+    full.names = TRUE, pattern = "tt_.*\\.rds")
+tt <- read_file(tt_fp) %>%
+    rename(COWcode = cow_code) %>%
+    mutate(year = as.numeric(year))
 
 df_cd <- left_join(df_cd, select(tt, country_id, year, COWcode),
     by = c("country_id", "year"))
@@ -493,6 +483,19 @@ all_vars <- union(indices, comps)
 sorted_vars <- organiseRows(subset(qtable, name %in% all_vars), cb_order, question_number)$name
 cy_core_vars <- sort_multiple_selection(unique(unlist(
     lapply(sorted_vars, function(v) {find_vars(v, qtable)}))))
+# still take stock indices but since they don't have osp or codelow/codehigh versions
+cy_core_vars <- cy_core_vars[!grepl("stock_", cy_core_vars)]
+
+if (interactive()) {
+    # Check country-year
+    old_cy_core <- read_file(list.files(
+        file.path(Sys.getenv("OLD_ROOT_DIR"), "dataset", "V-Dem-CY-Core"), pattern = ".rds", full.names = TRUE))
+    # what is in new but not in old?
+    setdiff(cy_core_vars, names(old_cy_core))
+    # What is in old but not in new?
+    setdiff(names(old_cy_core), cy_core_vars)
+    rm(old_cy_core)
+}
 
 # Report missing columns
 missvar <- cy_core_vars[!cy_core_vars %in% colnames(df_cy)]
@@ -555,6 +558,21 @@ sorted_vars <- organiseRows(subset(
 cy_extended_vars <- sort_multiple_selection(unique(unlist(
     lapply(sorted_vars, function(v) {find_vars(v, qtable)}))))
 
+# still take stock indices but since they don't have osp or codelow/codehigh versions
+cy_extended_vars <- cy_extended_vars[!grepl("stock_", cy_extended_vars)]
+cy_extended_vars <- cy_extended_vars[!grepl("e_ovexist", cy_extended_vars)]
+cy_extended_vars <- c(cy_extended_vars, "e_ovexist_0", "e_ovexist_1", "e_ovexist_2", "e_ovexist_3")
+
+if (interactive()) {
+    # Check country-year
+    old_cy <- read_file(Sys.getenv("OLD_DS_FILE"))
+    # what is in new but not in old?
+    setdiff(cy_extended_vars, names(old_cy))
+    # What is in old but not in new?
+    setdiff(names(old_cy), cy_extended_vars)
+    rm(old_cy)
+}
+
 # Full+Others is all variables in CY
 cy_others.df <- df_cy
 
@@ -564,7 +582,6 @@ if (length(missvar) > 0) {
     info("Missing variables: " %^% missvar)
 }
 
-# qtable %>% filter(qtable$name %in% missvar) %>% view
 cy_others.df <- select(cy_others.df, all_of(identifiers), all_of(cy_extended_vars))
 info(sprintf("CY-Full+Others rows: %d, cols %d",
     nrow(cy_others.df), ncol(cy_others.df)))
@@ -630,7 +647,7 @@ cd.df <- df_cd
 sorted_vars <- organiseRows(subset(
         qtable,
         # -- keep these sections
-        cb_section %in% c(vdem, x3_sections, sm_sections) &
+        cb_section %in% c(vdem, x3_sections, sm_sections, demed_sections) &
         # -- drop these variables names
         !name %in% c(
             'gapstart','gapend',
@@ -638,12 +655,23 @@ sorted_vars <- organiseRows(subset(
             'v2x_regime','v2x_regime_amb',
             'v2x_ex_confidence','v2x_ex_direlect','v2x_ex_hereditary', 'v2x_ex_military','v2x_ex_party',
             'v2xps_party','v2xps_party_codelow', 'v2xps_party_codehigh',
-            'v2x_feduni',
+            'v2x_feduni', 'v2x_electoral_integrity',
+            'v2x_partipdem_stock', 'v2x_polyarchy_stock', 'v2x_libdem_stock', 'v2x_egaldem_stock', 'v2x_delibdem_stock',
             'v2x_accountability', 'v2x_veracc', 'v2x_horacc', 'v2x_diagacc')),
     cb_order, question_number)$name
 
 cd_vars <- sort_multiple_selection(
     unique(unlist(lapply(sorted_vars, function(v) {find_vars(v, qtable)}))))
+
+if (interactive()) {
+    # Check country-year
+    old_cd <- read_file(Sys.getenv("OLD_DS_CD_FILE"))
+    # what is in new but not in old?
+    setdiff(cd_vars, names(old_cd))
+    # What is in old but not in new?
+    setdiff(names(old_cd), cd_vars)
+    rm(old_cd)
+}
 
 # Grab columns
 missvar <- cd_vars[!cd_vars %in% colnames(cd.df)]

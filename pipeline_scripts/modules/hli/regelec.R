@@ -68,8 +68,10 @@ if (no_test()) {
     country <- load_country()
     utable <- load_country_unit()
     objs <- find_dep_files(TASK_ID, db)
+    # Both A,C
     elsrgel <- objs[["v2elsrgel"]][["v2elsrgel"]]$cd
     elreggov <- objs[["v2elreggov"]][["v2elreggov"]]$cd
+    # MM
     prob.v2elrgpwr <- objs[["v2elrgpwr"]]
 
     # Run

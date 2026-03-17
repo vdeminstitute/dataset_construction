@@ -25,7 +25,6 @@
 # 3. The lateral scores are removed from the "real scores". The scores are
 #   then put into wide format with coder as columns, which produce NAs.
 # 4. The wide scores are interpolated according to the list above. 
-#
 # ==========================================================================
 
 suppressMessages(library(data.table))
@@ -189,7 +188,7 @@ interpolate_across_years <- function(df) {
 		arrange(country_text_id, historical_date) %>%
         # last_id is only TRUE for added rows
 		mutate(last_id = ifelse(is.na(last_id), FALSE, last_id))
-	
+
 	df_both %>%
 		select(-year) %>%
         # exchange year for group_year

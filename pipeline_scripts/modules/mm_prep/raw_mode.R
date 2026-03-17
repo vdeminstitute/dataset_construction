@@ -25,7 +25,8 @@ compare_supgroup <- function(values, country_text_id, historical_date, row_means
 calc_mode <- function(df, row_means) {
     m <- df - 1
 
-    table_by_row_and_sort <- function(x) {    
+    table_by_row_and_sort <- function(x) {
+    
         out_vector <- sort(table(x), decreasing = TRUE)
         return(out_vector)
     

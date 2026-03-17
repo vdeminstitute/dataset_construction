@@ -1,9 +1,5 @@
 #!/usr/bin/env Rscript
 
-# ------------------------------------------------------------------------------
-# The This script creates the v2x_divparctrl index.
-# ------------------------------------------------------------------------------
-
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))
 suppressMessages(library(vutils))
@@ -50,5 +46,6 @@ if (no_test()) {
         write_file(o=_, OUTFILE, dir_create = TRUE)
 
     } else {
+        # Call unit tests for main function and sub functions
         testthat::test_file("~/proj/vdemds/module_unit_tests/extra/v2x_divparctrl.R")
     }

@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
-
-# ------------------------------------------------------------------------------
+#
 # Purpose:
 # Generate a data.frame that contains the main country coded for each coder.
 # ------------------------------------------------------------------------------

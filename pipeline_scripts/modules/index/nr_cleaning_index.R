@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-# --------------------------------------------------------------------------
 # This script is used to clean cd and cy summarizes of indexes based on the number of components per observation and the number of coders per component. At the moment the rule for cleaning is that there should be more than 3 observations per component and 3 or more coders per component.
 # --------------------------------------------------------------------------
 suppressMessages(library(vutils))

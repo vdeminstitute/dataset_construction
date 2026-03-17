@@ -1,6 +1,6 @@
 Package: vbase
 Title: V-Dem base expansion
-Version: 15.1
+Version: 16.0
 Authors@R: 
     c(person(
         given = "Linnea",

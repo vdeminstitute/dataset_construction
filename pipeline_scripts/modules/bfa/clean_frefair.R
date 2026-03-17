@@ -9,7 +9,6 @@
 # day-weighted mean.
 #
 # Note that we also set v2xel_frefair to 0 when v2x_elecreg is 0 
-# and there was no v2xel_frefair score existing before
 # ==========================================================================
 
 suppressMessages(library(dplyr))

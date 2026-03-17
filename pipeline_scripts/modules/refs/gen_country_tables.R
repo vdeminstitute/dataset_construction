@@ -1,13 +1,11 @@
 #!/usr/bin/env Rscript
 
-# ------------------------------------------------------------------------------
 # Purpose: 
 # This script creates the reference files:
 # 1: country_unit
 # 2: country_table
 # 3: psq_country_table
 # These references are used to determine the structure and characteristics of countries.
-# ------------------------------------------------------------------------------
 
 suppressMessages(library(dplyr))
 suppressMessages(library(magrittr))
@@ -57,7 +55,7 @@ create_country_unit_table <- function(dir = INDIR) {
         mutate(year = as.numeric(year)) %>% 
         ungroup() %>%
         arrange(country_id, year) %>% 
-        mutate(., cu_id = seq_along(rownames(.))) %>% 
+        mutate(., cu_id = seq_along(rownames(.))) %>%
         select(cu_id, country_id, year, project)
     stopifnot(!dplyr::is_grouped_df(country_unit))
 
@@ -126,8 +124,6 @@ country_succession <-
 # We left join with country_succession to obtain a potential parent and end_date.
 # Hence, country table filtered for Baden will have parent_country_id == 77 and
 # end_date == 1871, as this is its relationship to Germany.
-# We drop country_id = 213 because we used to have two ID's for China. 
-# This is not the case any more. Hence, we only keep the other country_id (110).
 country <-
     read_file(file.path(INDIR, "country.rds")) %>%
     select(country_text_id = text_id, country_id, name) %>%
@@ -137,11 +133,6 @@ country <-
     arrange(country_id)
 
 # ------------------------------------------------------------------------------
-# ptable = table that shows the name and country_idfrom the PSQ questionnaire.
-# When experts choose their country in the PSQ, they can choose between the 
-# countries that exists in this table. The country_list_id == 197 is removed
-# because it is the selection for "Please Select A Country".
-
 ptable <- create_psq_translation_table(dir = INDIR, drop_ids = 197)
 write_file(ptable, file.path(OUTDIR, "psq_country_table.rds"))
 
@@ -151,9 +142,7 @@ write_file(ptable, file.path(OUTDIR, "psq_country_table.rds"))
 # country_year_mask to define our units.
 
 country_unit <- create_country_unit_table(dir = INDIR)
-# TRUNCATE TABLE: we remove all rows from the current table in postgres
 pg_send_query(db_vdem, "TRUNCATE TABLE country_unit;")
-# UPLOAD NEW TABLE
 pg_append_table(country_unit, "country_unit", db_vdem)
 
 # ------------------------------------------------------------------------------
@@ -172,7 +161,7 @@ write_file(utable, file.path(OUTDIR, "country_unit.rds"))
 # starts and stop. For example, the columns codingstart and codingend suffixed 
 # with either _contemp or _hist shows the start and end year of the corresponding
 # periods. Do note that this is not sensitive towards any gaps. For that, we use
-# utable. It also has inoformation about parent_country_id and end_date.
+# utable. It also has information about parent_country_id and end_date.
 
 country_table <- create_country_table(u_table = utable, country = country)
 write_file(country_table, file.path(OUTDIR, "country_table.rds"))

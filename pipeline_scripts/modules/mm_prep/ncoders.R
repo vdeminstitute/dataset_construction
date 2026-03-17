@@ -99,6 +99,7 @@ if (no_test()) {
     info("Done with calculating the number of coders for " %^% TASK_NAME)
 
 } else {
+    # Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/mm_prep/test_ncoders.R") %>%
 		check_test_file_output()
 }

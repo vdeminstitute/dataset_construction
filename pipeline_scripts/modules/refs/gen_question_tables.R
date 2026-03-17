@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-# ------------------------------------------------------------------------------
 # Loads downloaded database reference tables and constructs the
 # question table which has one row per question/variable.
 # ------------------------------------------------------------------------------
@@ -146,10 +145,7 @@ add_answer_categories_k <- function(qtable, qcats) {
     left_join(qcats, by = "question_id") %>%
     mutate(k = as.numeric(k)) %>%
     mutate(k = case_when(
-		# Binary questions have two answer categories
 		question_type == "Y" ~ 2,
-		# Questions that also have a binary version get
-		# one answer category removed
         name %^% "bin" %in% name ~ k - 1,
         TRUE ~ k))
 }
@@ -184,6 +180,7 @@ fix_class <- function(qtable, vignette_parent) {
 
 	qtable %<>%
 	    mutate(question_type = ifelse(grepl("^e_v2x.*(c|C)", name), "N", question_type),
+			question_type = ifelse(grepl("^e_", name) & question_type == "X", "E", question_type),
 	        class = ifelse(grepl("^e_v2x.*(c|C)", name), "E", class))
 
 	# Remove unnecessary questions by question_type
@@ -311,6 +308,7 @@ identify_recoded_variables <- function(qtable, dich_df) {
 	    filter(!name %in% qtable_rec$name) %>%
 	    bind_rows(qtable_rec)
 	qtable$dichotomized[grepl("_rec$", qtable$name)] <- FALSE
+
 	qtable$k[qtable$name == "v2jupack"] <- 4
 
 	return(qtable)
@@ -329,7 +327,7 @@ recode_category_to_binary <- function(qtable) {
 
     # 'binary_var' says if that variable is a binary version
 	qtable %<>% mutate(binary_var = ifelse(
-	    name %in% c("v2mecenefibin", "v2lgdsadlobin", "v2elffelrbin"),
+	    name %in% c("v2mecenefibin", "v2lgdsadlobin", "v2elffelrbin", "v3elffelrbin"),
 	    TRUE, FALSE))
 	return(qtable)
 }
@@ -448,6 +446,7 @@ correct_downloaded_tables <- function(qtable) {
 	qtable$a_data[grepl("^v2xdd_", qtable$name)] <- TRUE
 	qtable$a_data[grepl("_elecreg$", qtable$name)] <- TRUE
 	qtable$a_data[grepl("abort", qtable$name)] <- TRUE
+	qtable$rating[qtable$binary_var == TRUE] <- FALSE
 
 	qtable %<>% arrange(name)
 	return(qtable)
@@ -487,6 +486,13 @@ adjustments_for_dichotomous_variables <- function(qtable) {
 	        name == "v3elffelr" ~ 5,
 	        TRUE ~ k))
 	return(qtable)
+}
+
+adjust_exclusion_vars <- function(qtable) {
+	qtable %<>% mutate(rating = case_when(survey_name == "Exclusion" ~ FALSE,
+		TRUE ~ rating),
+		a_data = case_when(survey_name == "Exclusion" ~ FALSE,
+		TRUE ~ a_data))
 }
 
 last_checks <- function(qtable) {
@@ -633,6 +639,7 @@ qtable <-
 	drop_variables(.) %>%
 	add_survey(., survey_tbl, question_queue_tbl) %>%
 	adjustments_for_dichotomous_variables(.) %>%
+	adjust_exclusion_vars(.) %>%
 	last_checks(.) %>% 
     as.data.frame() %>% 
     organiseRows(question_id)
@@ -650,71 +657,3 @@ vbase::pg_create_table(df = qtable, name = "qtable", db = db, overwrite = TRUE)
 invisible(suppressWarnings(DBI::dbSendStatement(conn = db, statement = "ALTER TABLE qtable OWNER TO vdem;")))
 info("Saving qtable to the refs directory.")
 vbase::write_file(qtable, file.path(OUTDIR, "question_table.rds"), dir_create = TRUE)
-
-# -- Set attributes
-attr(qtable, "meta_data") <- c(
-    question_id = "Question identifier number from database",
-    name = "Variable tag",
-    question_type = "Multiple choice, multiple selection, etc. Cf. question_type_label",
-    index_type = "Dichotomous, interval, etc.", 
-    class = "A*, B, C, etc.",
-    els = "Identifier for whether a variable is election-date specific",
-    aps = "Identifier for whether a variable is HOG/HOS appointment-date specific",
-    is_id = "Is this variable an identifier variable?",
-    components = "Index component variables",
-    crosscoder_aggregation = "How are coder scores aggregated?",
-    datarelease = "Release version and release notes",
-    aggregation = "Text clarifying index aggregations.",
-    cy_aggregation = "Method of CD to CY aggregation of Non-C variables",
-    scale = "Ordinal, interval, etc.", 
-    responses = "Question response categories",
-    codebook_tag = "The codebook tag may be different, with escaped underscores",
-    cb_section = "Codebook section identifier used in the codebook latex template",
-    vartype = "Variable type according to codebook table",
-    clean_tag = "Codebook variable tag with escaping removed",
-    codebook = "Does this variable have a codebook entry?",
-    conthistmerge = "This is specified for historical variables only: hist_only=This variable does not exist as contemporary; merge=Fully merge this variable with the contemporary equivalent; merge_conflict=Merge this with v2, but keep v3 as well;no_merge=This variable exists as v2, but we do not want to merge.", 
-    hist_merged = "Identify which v2 variables are merged with v3 (for vignettes)",
-    hist_outside_coding = "Do historical variables have observations outside their official coding period as defined by country_unit table?",
-    additional_versions = "Variable versions for codebook entry",
-    date_specific = "Is this variable coded only on specific dates?",
-    cleaning = "Is this variable being cleaned by another variable?", 
-    cont_outside_coding = "Do contemporary variables have observations outside their official coding period as defined by country_unit table?",
-    codebook_name = "Variable description according to codebook", 
-    overlap_use_hist = "Use v3 instead of v2 data for overlap period.",
-    question_type_label = "Label for question types",
-    active = "Is this question active in the online survey interface?",
-    min = "Minimum value. Relevant for MM variables starting at 1.",
-    k = "Number of answer categories",
-    cb_responses = "Question responses as in codebook", 
-    dich_parent_tag = "Tag of parent variable for dichotomized variables", 
-    dichotomized = "Is this variable a dichotomized version of another?",
-    to_dichotomize = "Will other variables be created from this one as dichotomized version?",
-    parent_tag = "Variable tag without v2 or v3 prefix",
-    indivhist = "Created from conthistmerge where hist_only is true",
-    hist_no_want_merge = "Created from conthistmerge where no_merge",
-    hist_merge_conflict = "Created from conthistmerge where merge_conflict",
-    hist_merge_no_conflict = "Created from conthistmerge where merge",
-    index_component = "Not in use. In which indices is this variable used?",
-    mm_prep = "Does this variable follow the mm_prep scripts?",
-    percent = "Percentag variable",
-    mm = "Does this variable go through the mm?",
-    NA_historical_date = "NA in historical_date for all observations.",
-    binary_index = "Calculated with the binary_index script",
-    bfa = "Bayesian Factor Analysis. Not in use?",
-    hli = "High level indicate. Not in use?",
-    choice_values = "Question choice values from choice table.",
-    disaggregated = "Old. Does this variable go into the disaggregated dataset.",
-    calculation = "Calculation method. Not in use?",
-    rating = "Variable stored in rating table",
-    a_data = "Variable stored in a_data table",
-    code_col = "Data stored in code column", 
-    text_col = "Data stored in text answer column",
-    recode_category_to_binary = "Is an answer category recoded to a separate variable?",
-    binary_var = "Is this a variable that was created from the answer category of another variable?",
-    vignetted = "Vignettes exist for this variable",
-    survey_id = "Survey identifier for online survey interface",
-    survey_name = "Survey name for online survey interface",
-    backfill_question = "Is this question being backfilled (sequential coding)",
-    archived = "Is this question archived at the online coding interface?"
-    ) 

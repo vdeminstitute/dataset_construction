@@ -192,7 +192,7 @@ getJanuaryFirst <- function(objs, qtable, utable, TASK_NAME) {
 conthistmergeJanuaryFirst <- function(v2Jan, v3Jan, utable) {
 	
 	# (1) The v3 dependency needs to be cleaned by utable: we drop the overlap observations.
-    # -- We drop them because we prioritise the contemporary project.
+    # -- We drop them because we prioritize the contemporary project.
     # (2) Keep observations where project is NA as they represent pre-coding observations.
     stopifnot(!is.null(v2Jan), !is.null(v3Jan))
 
@@ -215,7 +215,6 @@ conthistmergeJanuaryFirst <- function(v2Jan, v3Jan, utable) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

@@ -3,6 +3,7 @@
 # ==========================================================================
 # Extract information from v2reginfo and split it into 2 variables:
 # v2regdur (regime duration) and v2regidnr (regime ID)
+# The default date for this question is January 1.
 # ==========================================================================
 
 suppressMessages(library(dplyr))
@@ -53,7 +54,7 @@ create_duration_var <- function(df) {
             across(starts_with("reg_"), ~as.Date(.x, format = "%d/%m/%Y"))) |> 
         mutate(
             historical_date = case_when(
-                country_id %in% c(28, 60, 71, 116) & historical_date == as.Date("2023-01-01") ~ reg_start,
+                country_id %in% c(60) & historical_date == as.Date("2023-01-01") ~ reg_start,
                 TRUE ~ historical_date
             )) |> 
         mutate(
@@ -159,7 +160,6 @@ main <- function(df, qtable, TASK_NAME) {
 
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

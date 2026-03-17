@@ -8,7 +8,6 @@
 # The module that creates regimes of the world is a STATA script (regime_type.do) that is called
 # by this R script. Hence, it requires a that STATA is installed and that the
 # the symbolic link to STATA is set up correctly (consult the setup script for STATA).
-# ------------------------------------------------------------------------------
 
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))

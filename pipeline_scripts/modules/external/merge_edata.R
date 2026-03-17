@@ -1,15 +1,14 @@
 #!/usr/bin/env Rscript
-
-# ------------------------------------------------------------------------------
-# This script takes the e data stored in the e_data table and creates a static file in the correct ds_construction folder.
-# This script also interpolates the relevant variables and creates e_miurbani.
-# ------------------------------------------------------------------------------
-
 suppressMessages(library(vutils))
 suppressMessages(library(dplyr))
 suppressMessages(library(vanalysis))
 suppressMessages(library(DBI))
 
+# ------------------------------------------------------------------------------
+# This script takes the e data stored in the e_data table and creates a version specific static file in the correct ds_construction folder.
+
+# This script also interpolates the relevant variables and creates e_miurbani.
+# ------------------------------------------------------------------------------
 current_year <- Sys.getenv("NEWEST_YEAR")
 EXT_DS_DIR <- sprintf("~/data/data_team/external_data/external_data_%s", current_year)
 tt <- read_file(list.files(file.path(EXT_DS_DIR, "identifiers"), pattern = "tt", full.names = TRUE)) %>%
@@ -42,7 +41,6 @@ check_years <- function(df) {
 
     return(check_years)
 }
-
 # ------------------------------------------------------------------------------
 # Missing data within a time–series is interpolated using linear interpolation for each country. In addition to this, from the last recorded data point to nowadays the data is extrapolated: e_peaveduc 
 

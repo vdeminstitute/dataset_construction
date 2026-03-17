@@ -114,5 +114,6 @@ if (no_test()) {
     write_file(o=_, f=OUTFILE, dir_create = TRUE)
 
     } else {
+    # Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/extra/test_v2ex_hosw.R")
     }

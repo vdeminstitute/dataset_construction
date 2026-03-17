@@ -11,3 +11,6 @@ construction process.
 install.packages("vutils")
 ```
 
+#### License
+
+GPL (>= 2)

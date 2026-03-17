@@ -48,7 +48,6 @@ main <- function(utable, cd, cy) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

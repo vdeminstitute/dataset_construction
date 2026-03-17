@@ -12,7 +12,6 @@ suppressMessages(library(vpipe))
 # Functions
 # --------------------------------------------------------------------------
 calc_corr <- function(comp_list) {
-	# v2lgcrrpt is missing when v2lgbicam == 0 
 	post.corr <- (comp_list[["prob.execorr"]] + comp_list[["prob.pubcorr"]] + 
 		comp_list[["prob.v2lgcrrpt"]] + comp_list[["prob.v2jucorrdc"]]) / 4
 	post.icorr <- (comp_list[["prob.execorr"]] + comp_list[["prob.pubcorr"]] + 
@@ -23,6 +22,7 @@ calc_corr <- function(comp_list) {
 }
 
 main <- function(execorr, pubcorr, v2lgcrrpt, v2jucorrdc, utable, TASK_NAME) {
+
 	# Stretch individually
 	execorr %<>% binary_stretch_z_sample(., utable)
 	pubcorr %<>% binary_stretch_z_sample(., utable)

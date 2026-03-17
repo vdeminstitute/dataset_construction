@@ -132,5 +132,6 @@ if (no_test()) {
     info("Finished: " %^% TASK_NAME)
 
     } else {
+        # Call unit tests for main function and sub functions
         testthat::test_file("~/proj/vdemds/module_unit_tests/extra/test_percent.R")
     }

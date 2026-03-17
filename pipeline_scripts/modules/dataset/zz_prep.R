@@ -13,8 +13,6 @@ suppressMessages(library(vutils))
 suppressMessages(library(vanalysis))
 suppressMessages(library(vpipe))
 
-FILEPATH <- indir
-
 # Variables that we want to extract from the PSQ
 vars <- c(
     "v2zztimespent", "v2zzmaterials",
@@ -25,9 +23,6 @@ vars <- c(
     "v2zzdemru", "v2zzdemsar", "v2zzdemsaf", "v2zzdemswe", "v2zzdemswz",
     "v2zzdemuk", "v2zzdemus", "v2zzdemvz")
 numvars <- vars[vars != "v2zzmaterials"]
-
-last_mod_year <- to_year(as.Date(file.info(FILEPATH)$ctime))
-stopifnot(`Update PSQ file first!` = last_mod_year == to_year(as.Date(Sys.time())))
 
 psq_data <- read_file(FILEPATH)
 

@@ -69,6 +69,7 @@ if (no_test()) {
         write_file(OUTFILE, dir_create = TRUE)
     info("Create recoded variable versions for " %^% TASK_NAME)
 } else {
+# Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/init/test_recoded.R") %>%
 		check_test_file_output()
 }

@@ -1,8 +1,6 @@
 #!/usr/bin/env Rscript
 
-# --------------------------------------------------------------------------
 # Generate v2x_feduni (Division of power index)
-# --------------------------------------------------------------------------
 
 suppressMessages(library(dplyr))
 suppressMessages(library(vutils))
@@ -62,5 +60,6 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = TRUE)
 
     } else {
+    # Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/extra/test_feduni.R")
     }

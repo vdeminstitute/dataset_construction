@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # ==========================================================================
-# This script creates v2x_elecoff and related indices
+# creates v2x_elecoff + related indices
 # ==========================================================================
 
 suppressMessages(library(dplyr))
@@ -143,5 +143,6 @@ if (no_test()) {
       write_file(., OUTFILE, dir_create = TRUE)
 
   } else {
+    # Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/extra/test_elecoff.R")
   }

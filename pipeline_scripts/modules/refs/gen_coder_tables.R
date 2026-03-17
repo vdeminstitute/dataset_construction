@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-# ------------------------------------------------------------------------------
 # Purpose: We want to generate a data.frame that indicates for each combination
 # of variable, coder, and country, the 'coder type'. The following types exist:
 # 1. Historical_coder
@@ -15,9 +14,8 @@ suppressMessages(library(dplyr))
 suppressMessages(library(vutils))
 suppressMessages(library(vpipe))
 
-# Functions
 # ------------------------------------------------------------------------------
-# Determine_coder_types
+# Functions
 determine_coder_types <- function(df, country_unit, main_country, lateral_dates) {
     
     raw_min <-
@@ -121,7 +119,6 @@ main <- function(qtable, country, country_unit, df, main_country, lateral_dates,
 
 
 # Run script
-# ------------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

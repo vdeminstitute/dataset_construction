@@ -2,6 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # Create binary variables from baseline categories
+# Check the codebook to find out which category is the 'baseline' category in the context of the transform.
 # ------------------------------------------------------------------------------
 
 suppressMessages(library(dplyr))
@@ -85,7 +86,6 @@ main <- function(qtable, df) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

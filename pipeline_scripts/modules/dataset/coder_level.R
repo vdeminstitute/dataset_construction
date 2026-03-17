@@ -26,17 +26,14 @@ country <- load_country()
 
 # ------------------------------------------------------------------------------
 # The ratings are grabbed from the interpolated_coders module
-excl_vars <- vars <- qtable %>%
-    filter(survey_name %in% c("Exclusion", "Regimes")) 
-
 inter_vars <- 
     subset(tasks, task_name != "v2test" & module_name == "interpolate_coders"
-    & !task_name %in% excl_vars$name & !grepl("v2exl_legit", task_name) & !grepl("v2reg", task_name))$task_id
+    & !task_name %in% excl_vars$name & !grepl("v2exl_legit", task_name))$task_id
 file_list_inter <- create_outfile_local(inter_vars, tasks, modules, ROOT)
 
 # The reliability parameters are grabbed from the status_mm module
 mm_vars <- 
-    subset(tasks, task_name != "v2test"  & !task_name %in% excl_vars$name & !grepl("v2exl_legit", task_name) & !grepl("v2reg", task_name)
+    subset(tasks, task_name != "v2test"  & !task_name %in% excl_vars$name & !grepl("v2exl_legit", task_name)
     & task_name %!~% "_rec$" | task_name == "v2exdfcbhs_rec") %>%
     subset(module_name == "status_mm") %$% task_id
 file_list_mm <- create_outfile_local(mm_vars, tasks, modules, ROOT)
@@ -118,7 +115,10 @@ prep.ll <- mclapply(file_list_inter, function(f) {
         by = c("country_text_id", "historical_date", "coder_id")) %>%
     wide_to_long(id_vars = c("country_text_id", "historical_date", "coder_id"))
 
-}, mc.cores = 4, mc.preschedule = FALSE)
+}, mc.cores = 6, mc.preschedule = FALSE)
+
+# save in case you need to trouble shoot
+write_file(prep.ll, file.path(ROOTDIR, "llf", "prep.ll.rds"))
 
 stopifnot(length(prep.ll) == length(file_list_inter))
 
@@ -178,7 +178,10 @@ beta.ll <- mclapply(beta_files, function(f) {
     }
 
     return(b.df)
-}, mc.cores = 4, mc.preschedule = FALSE)
+}, mc.cores = 6, mc.preschedule = FALSE)
+
+# save in case you need to trouble shoot
+write_file(beta.ll, file.path(ROOTDIR, "llf", "beta.ll.rds"))
 
 stopifnot(length(beta.ll) == length(beta_files))
 
@@ -188,7 +191,6 @@ betas <- Reduce(partial(full_join, by = "coder_id"), beta.ll) %>%
 stopifnot(no_duplicates(betas, cols = "coder_id"))
 df_betas <- wide_to_long(betas, id_vars = "coder_id")
 df_betas[["value"]] <- round(as.numeric(df_betas[["value"]]), 3)
-
 # ------------------------------------------------------------------------------
 # Combine
 df <- long_to_wide(
@@ -208,7 +210,6 @@ out <- merge(df, df_betas_wide, by = "coder_id", all.x = TRUE)
 stopifnot(nrow(out) == nrow(df))
 stopifnot(!anyNA(out$historical_date))
 stopifnot(!anyNA(out$country_text_id))
-
 # ------------------------------------------------------------------------------
 # Merge in PSQ and DEMED
 
@@ -217,7 +218,7 @@ zz_df <- read_file(file.path(ROOT, "dataset", "v2zz_coder_level.rds"))
 # Read in old coder-level data to get DEMED variables
 previous_coder_level <- read_file(sprintf(file.path(Sys.getenv("OLD_ROOT_DIR"), "dataset", "V-Dem-Coder-Level", "Coder-Level-Dataset-%s.rds"), Sys.getenv("DS_PREVIOUS_VERSION")))
 demed_variables <- subset(qtable, startsWith(cb_section, "demed") & vartype == "C", name)$name
-exreg_vars <- vars <- qtable %>% filter(survey_name %in% c("Exclusion", "Regimes")) %>% pull(name) 
+exreg_vars <- vars <- qtable %>% filter(survey_name %in% c("Exclusion")) %>% pull(name) 
 include_variables <- paste0(c("country_text_id", "historical_date", "coder_id", demed_variables, exreg_vars), collapse = "|")
 add_in_coder_level <- previous_coder_level[, grepl(include_variables, names(previous_coder_level))]
 

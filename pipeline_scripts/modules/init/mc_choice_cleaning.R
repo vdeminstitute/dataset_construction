@@ -61,7 +61,6 @@ main <- function(qtable, df, TASK_NAME) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

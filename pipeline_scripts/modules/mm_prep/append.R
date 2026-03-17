@@ -1,10 +1,6 @@
 #!/usr/bin/env Rscript
 
 # ------------------------------------------------------------------------------
-# The purpose of this script is to create the input file to model.R. That is,
-# this is the last "local" step we need to take. The input to this script is:
-# reduced scores, vignettes, lateral vignettes.
-
 # The script then creates empirical priors for the country-dates scores and incorporates
 # vignettes in the data. The script also creates indices that Stan can use for
 # indexing observations.

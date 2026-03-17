@@ -12,7 +12,6 @@
 # Within a reduction period, we first interpolate ratings backwards in time
 # and then forwards in time. In the end, we use the unique rating for such a
 # period to define reduced *observations*.
-# 
 # ==========================================================================
 
 suppressMessages(library(dplyr))
@@ -183,6 +182,7 @@ date_to_weights_across_years <- function(v) {
     stopifnot("Date" %in% class(v))
     if (length(v) == 1)
         return(1)
+    
     nyears <- length(unique(lubridate::year(v))) 
     out <-
         split(v, lubridate::year(v)) |> 

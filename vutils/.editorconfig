@@ -1,0 +1,13 @@
+# EditorConfig: http://editorconfig.org
+
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_stype = space
+indent_size = 4
+
+[*.{c,cpp,h,hpp}]
+indent_size = 2

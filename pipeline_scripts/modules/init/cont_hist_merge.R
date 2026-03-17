@@ -18,6 +18,7 @@ assert_question_structure <- function(qtable) {
     k <- length(unique(qtable$k)); qClass <- all(qtable$class == "C")
 
     if (qClass & length(k) != 1) {
+        # Workaround bcs projects are not aligned
         stop("Contemporary and historical vary in their k-value")
     }
 }
@@ -107,6 +108,7 @@ extract_contemporary <- function(df, TASK_NAME, qtable) {
     
     df <- df[grepl("^v2", df$name), ]
     overlap_use_hist <- qtable$overlap_use_hist[qtable$name == TASK_NAME]
+    # If we prefer historical observations for overlap
     if (overlap_use_hist) {
         df <- df[!df$project %in% "overlap",]
     }
@@ -225,7 +227,6 @@ main <- function(TASK_NAME, df, qtable, country_unit, country) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

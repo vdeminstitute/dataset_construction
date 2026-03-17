@@ -1,0 +1,71 @@
+model{
+
+for(i in 1:N){
+  for(j in 1:7) {
+    muEV[i,j] <- betaEV[j,1] + betaEV[j,2]*(betaER[1] + betaER[2]*xiV[i])
+    yEV[i,j] ~ dnorm(muEV[i,j],tauEV[j])
+  }
+}
+for(j in 1:7){
+  betaEV[j,1] ~ dnorm(0,1)
+  betaEV[j,2] ~ dnorm(.15,100)T(0,)
+  sigmaEV[j] ~ dunif(.1,10)
+  tauEV[j] <- pow(sigmaEV[j],-2)   
+}
+
+###elections dichotomous
+for(i in 1:N){
+  probit(pER[i]) <- betaER[1] + betaER[2]*xiV[i]
+  yER[i] ~ dbern(pER[i])
+}
+
+betaER[1] ~ dnorm(6,1)
+betaER[2] ~ dnorm(12,1)T(0,)
+
+###Suffrage
+for(i in 1:N){
+  probit(muPE[i]) <- betaPE[1] + betaPE[2]*xiV[i]
+  yPE[i] ~ dbeta(muPE[i]*tauPE, (1-muPE[i])*tauPE)
+}
+
+tauPE ~ dgamma(1,1)
+
+betaPE[1:2] ~ dmnorm(b0,B0)
+
+for(i in 1:N){
+  probit(pO3[i])<-betaO3[1] + betaO3[2]*xiV[i]
+  yO3[i] ~ dbern(pO3[i])
+}
+
+betaO3[1] ~ dnorm(0,1)
+betaO3[2] ~ dnorm(1,1)
+
+###########Parties
+
+for(i in 1:N){
+  for(j in 1:3) {
+    muP[i,j] <- betaP[j,1] + betaP[j,2]*xiP[i]
+    yP[i,j] ~ dnorm(muP[i,j],tauPP[j])
+  }
+}
+for(j in 1:3){
+  betaP[j,1:2] ~ dmnorm(b0,B0)
+  sigmaPP[j] ~ dunif(.1,10)
+  tauPP[j] <- pow(sigmaPP[j],-2)   
+}
+
+  for(i in 1:N){
+     xiPstar[i] ~ dnorm(0,tauP)
+     xiP[i] <- xiV[i] + xiPstar[i]
+  }
+  
+  sigmaP ~ dunif(.1,10)
+  tauP <- pow(sigmaP,-2)   
+  
+
+#######horizontal and vertical accountability priors
+  for(i in 1:N){
+     xiV[i] ~ dnorm(0,1)
+  }
+  
+}

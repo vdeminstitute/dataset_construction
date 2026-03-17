@@ -94,6 +94,7 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = TRUE)
     info("Done with calculating means for " %^% TASK_NAME)
 } else {
+    # Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/mm_prep/test_raw_mean.R") %>%
 		check_test_file_output()
 }

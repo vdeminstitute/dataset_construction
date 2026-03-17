@@ -396,7 +396,6 @@ main <- function(TASK_NAME, df, qtable, val_col, default_date_0101) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

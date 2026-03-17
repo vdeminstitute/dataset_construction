@@ -1,7 +1,5 @@
 #!/usr/bin/env Rscript
 
-# ------------------------------------------------------------------------------
-
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))
 suppressMessages(library(vutils))
@@ -30,7 +28,6 @@ write_file(df, file.path(ROOT, "stata/structure_of_executives_input.dta"),
 
 
 # Run STATA script
-# ------------------------------------------------------------------------------
 home <- Sys.getenv("HOME")
 system("cd " %^% home %^% "/proj/vdemds/stata_indices/ && " %^% "~/.local/bin/stata -b do structure_of_executives.do")
 # Let's read the log file and print it so that it goes to the log table.

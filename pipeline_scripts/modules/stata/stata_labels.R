@@ -5,8 +5,6 @@
 # on each dataset, which in turn calls value_labels.do. The former contains 
 # static file paths to the Stata dataset. The latter script contains static
 # labels for each variable and response category.
-# ------------------------------------------------------------------------------
-
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))
 suppressMessages(library(vutils))

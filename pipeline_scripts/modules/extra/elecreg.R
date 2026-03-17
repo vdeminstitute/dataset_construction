@@ -1,5 +1,4 @@
 #!/usr/bin/env Rscript
-
 # ------------------------------------------------------------------------------
 # This script creates the following variables / indices:
 # - v2x_elecreg, v2xex_elecreg, v2xlg_elecreg, v2xel_elecparl, v2xel_elecpres, 
@@ -234,6 +233,7 @@ a_vars_df <-
 fill_cols <- c("v2expathhs", "v2expathhg", "v2exhoshog", "v2lgbicam", "v2lgello")
 splits <- split(a_vars_df, list(a_vars_df$country_text_id, a_vars_df$year), drop = TRUE)
 
+# -- interpolate missing values within country_text_id and year (orders each group by historical_date and then interpolates forward)
 a_vars_df <- parallel::mclapply(splits, function(dat, FC) {
         dat <- organiseRows(dat, historical_date)
         for (fc in FC) { dat[[fc]] <- locf(dat[[fc]]) }
@@ -327,7 +327,10 @@ ll <- lapply(a_split, function(df) {
             v2xlg_leginter = if_else(is.na(v2lgello2), FALSE, v2xlg_leginter),
             
             v2x_hosabort = create_abort(new_vars, "v2xel_elecpres", "v2ex_elechos"),
-            v2x_legabort = create_abort(new_vars, "v2xel_elecparl", "v2lgbicam"),
+            v2x_legabort = create_abort(new_vars, "v2xel_elecparl", "v2lgbicam"))
+    
+    new_vars <- new_vars |>
+        mutate(
             v2x_hosabort = clean_abort(new_vars, "v2x_hosabort", country),
             v2x_legabort = clean_abort(new_vars, "v2x_legabort", country),
 
@@ -438,7 +441,6 @@ final_cy_df <- full_join(
 	ungroup()
 stopifnot(colnames(cy_df) %in% colnames(final_cy_df))
 
-# Clean by utable
 final_df <- final_df |> 
     inner_join(select(utable, country_text_id, year),
         by = c("country_text_id", "year"))
@@ -450,12 +452,16 @@ final_cy_df <- final_cy_df |>
 final_df <- final_df %>% ungroup |> select(-country_text_id) |>
     rename(v2x_elecreg_calc = v2x_elecreg,
         v2xex_elecreg_calc = v2xex_elecreg,
-        v2xlg_elecreg_calc = v2xlg_elecreg) |> 
+        v2xlg_elecreg_calc = v2xlg_elecreg,
+        v2x_hosabort_calc = v2x_hosabort,
+        v2x_legabort_calc = v2x_legabort) |> 
     arrange(country_id, historical_date)
 final_cy_df <- final_cy_df %>% ungroup |> select(-country_text_id) |>
     rename(v2x_elecreg_calc = v2x_elecreg,
         v2xex_elecreg_calc = v2xex_elecreg,
-        v2xlg_elecreg_calc = v2xlg_elecreg) |> 
+        v2xlg_elecreg_calc = v2xlg_elecreg,
+        v2x_hosabort_calc = v2x_hosabort,
+        v2x_legabort_calc = v2x_legabort) |> 
     arrange(country_id, year)
 
 indices <- names(final_df)[!names(final_df) %in% c("country_id", "historical_date", "year")]

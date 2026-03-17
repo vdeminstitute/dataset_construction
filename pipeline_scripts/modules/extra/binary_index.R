@@ -2,7 +2,8 @@
 
 # ==========================================================================
 # Script for binary indices (i.e. indices constructed from only two
-# input variables). Aggregation is done by first normalizing the draws from the
+# input variables) 
+# Aggregation is done by first normalizing the draws from the
 # z.sample csv files (posterior 50% sample file from the MM) and then
 # taking the raw mean.
 # ==========================================================================
@@ -107,5 +108,6 @@ if (no_test()) {
 		write_file(., OUTFILE, dir_create = TRUE)
 
 	} else {
+		# Call unit tests for main function and sub functions
         testthat::test_file("~/proj/vdemds/module_unit_tests/extra/test_binary_index.R")
 	}

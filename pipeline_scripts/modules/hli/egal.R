@@ -51,5 +51,6 @@ if (no_test()) {
         write_file(., OUTFILE, dir_create = TRUE)
 
 	} else {
+	# Call unit tests for main function and sub functions
     testthat::test_file("~/proj/vdemds/module_unit_tests/hli/test_egal.R")
 	}

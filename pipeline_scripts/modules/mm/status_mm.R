@@ -4,10 +4,18 @@
 # This script reads log files from measurement models jobs and decides based
 # on logged output whether or not a job should be 1) fetched as a result or 2)
 # resubmitted at a higher iteration count.
+# 
+# A submitted job can be updated with the following statuses:
+# -- failed: convergence tests failed
+# -- warning: convergence tests passed but ESS to low
+# -- converged: no failure and no warning
+# -- error: the script failed
+# -- running: a job is running
+# -- timed_out: a job timed out
+# -- cancelled: a job was cancelled
 #
 # The status is updated based on parsing log files.
-# --------------------------------------------------------------------------
-
+# ------------------------------------------------------------------------------
 suppressMessages(library(dplyr))
 suppressMessages(library(vutils))
 suppressMessages(library(vpipe))
@@ -23,14 +31,12 @@ stopifnot(is_path_mounted())
 
 # ITER_OVERRIDE
 ITER_OVERRIDE <- as.integer(Sys.getenv("ITER"))
-# -- if not set: FALSE -> ITER_OVERRIDE
-# -- if set: ITER -> ITER_OVERRIDE
 ITER_OVERRIDE <- ifelse(is.na(ITER_OVERRIDE), FALSE, ITER_OVERRIDE)
 
 # MM_OVERRIDE
 MM_OVERRIDE <- isTRUE(as.logical(Sys.getenv("MM_OVERRIDE")))
 
-# MIN_ITERATION 
+# MIN_ITERATION
 MIN_ITERATION <- suppressWarnings(as.integer(Sys.getenv("MIN_ITERATION")))
 MIN_ITERATION <- ifelse(is.na(MIN_ITERATION), 0L, MIN_ITERATION)
 stopifnot(!is.na(MIN_ITERATION))
@@ -43,14 +49,9 @@ info(sprintf("Running status_mm with settings: [ITER_OVERRIDE: %s] [MM_OVERRIDE:
 
 # Parse HPC log files per variable
 df <- mm_log_table(file.path(Sys.getenv("MM_SSH_DIR"), "logs"), TASK_NAME)
+df <- df[nrow(df), ]
 
 # From the logfile (df)
-# -- If there are any converged jobs, always proceed
-# -- If there are no converged jobs, evaluate ITER_OVERRIDE and MM_OVERRIDE
-# -- If either ITER_OVERRIDE or MM_OVERRIDE are TRUE, proceed
-# -- -- If ITER_OVERRIDE is anything but 0, it will be TRUE
-# -- 1) if both ITER_OVERRIDE and MM_OVERRIDE are TRUE, then MM_OVERRIDE takes precedence
-# If any are converged, grab the model, download the file locally and finish script.
 if (any(df$status == "converged") | as.logical(ITER_OVERRIDE) | MM_OVERRIDE) {
 
     # Choose converged version

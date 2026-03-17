@@ -43,7 +43,6 @@ check_newest_year <- function(df, TASK_NAME, qtable) {
 	NEWEST_YEAR <- as.integer(Sys.getenv("NEWEST_YEAR"))
 	stopifnot(`newest_year is missing`= !is.na(NEWEST_YEAR))
     info(sprintf("Checking if we have observations for the newest year: %d", NEWEST_YEAR))
-    # Account for no_update variables
     no_update <- qtable$no_update[qtable$name == TASK_NAME]
 	stopifnot(`This v2 variable has no data for the newest year!` = 
 		!(
@@ -105,9 +104,7 @@ recoding_country_ids <- function(df) {
 
     stopifnot(nrow(df) > 0)
     info("Merging Chinas and Saudi Arabias")
-    # Merge CHINA with China
     df$country_id[df$country_id == 213] <- 110
-    # Merge Nejd with Saudi Arabia for historical merge
     df$country_id[df$country_id == 374] <- 197
 
     return(df)
@@ -245,9 +242,6 @@ clean_hist_overlap <- function(df) {
 
     df[["country_id"]] <- ifelse(bool, df$parent_country_id, df$country_id)
 
-    # Non-C data for historical countries from 1900-1920 will be cleaned out with
-    # utable cleaning.
-
     return(df)
 }
 
@@ -313,7 +307,6 @@ wrong_column <- function(df) {
     return(df)
 }
 
-# Remove observation that has missing values in either code or text_answer
 remove_missing_observations <- function(df, TASK_NAME) {
 
     stopifnot(`df has zero rows` = nrow(df) > 0)
@@ -376,7 +369,7 @@ hist_elsnlsff_clrgunev_recoding <- function(df) {
 
     stopifnot(`df has zero rows` = nrow(df) > 0)
     stopifnot(`code is of class character` = !is.character(df[["code"]]))
-
+    
     if (!df$question_id[1] %in% c(2464, 2505)) {
         return(df)
     }
@@ -461,7 +454,6 @@ main <- function(TASK_NAME, df, qtable, country, coder) {
 
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     
     # Global variables

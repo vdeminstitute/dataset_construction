@@ -168,6 +168,7 @@ main <- function(objs, comps, frassoc, bfa_script, country, utable, TASK_NAME, q
 	# -- scale components
     # -- cut off vignettes
 	vars.ll <- setNames(lapply(comps, function(v) {
+		info("Preparing component " %^% v)
             prep_comps(
                 z = objs[[v]][[v]]$post.sample$z,
                 bfa_script = bfa_script,

@@ -321,7 +321,6 @@ main <- function(TASK_NAME, qtable, country, country_unit, df) {
 }
 
 # Run script
-# --------------------------------------------------------------------------
 if (no_test()) {
     # Global variables
     db <- pg_connect()

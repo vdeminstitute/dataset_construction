@@ -3,7 +3,6 @@
 # ------------------------------------------------------------------------------
 # The This script creates the v2x_suffr index, by taking v2elsuffrage / 100. 
 # ------------------------------------------------------------------------------
-
 suppressMessages(library(dplyr))
 suppressMessages(library(vutils))
 suppressMessages(library(vpipe))

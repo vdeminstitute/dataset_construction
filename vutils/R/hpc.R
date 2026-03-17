@@ -35,6 +35,22 @@ bfa_submit_tetralith_job <- function(index,
 }
 
 #' @export
+integrity_submit_tetralith_job <- function(index,
+    timeout = "24:00:00",
+    directory = Sys.getenv("INTEGRITY_DIR"),
+    script = "R/integrity_bfa.R",
+    hpc = "tetralith") {
+    system("ssh " %^% hpc %^% " " %^%
+           "'cd " %^% directory %^% "; " %^%
+           "export LOGDIR=" %^% directory %^% "/logs/; " %^%
+           "export VARIABLENAME=" %^% index %^% "; " %^%
+           "./scripts/zbatch " %^%
+                "-t " %^% timeout %^%
+                " scripts/int_batch.sh " %^% script %^% "'")
+    info("Submitted " %^% index)
+}
+
+#' @export
 mm_read_log <- function(logpath, local_dir = FALSE) {
 	if (!local_dir) {
 		stopifnot(is_path_mounted())
@@ -148,7 +164,7 @@ accountability_submit_job <- function(v, directory = Sys.getenv("ACC_DIR"),
         "; export rscript=", rscript,
         "; sbatch -J ", v, " -A ", account," -o ", logfile,
         " -e ", logfile, " --time=", timeout,
-        " --mail-type=FAIL -N 1 --exclusive --ntasks-per-node=4", script, "'"))
+        " --mail-type=FAIL -N 1 --exclusive ", script, "'"))
 
     info(sprintf("Submitted %s with %s timeout", v, timeout))
 }
@@ -189,8 +205,8 @@ mm_summary <- function(df_logs) {
     table_(status)
 }
 
+#' Check which components for an index are running
 #' @export
-# Check which components for an index are running
 components_running <- function(db, var, codebook, qtable) {
     # Define var dependencies
     deps <- rec_components(var, codebook)
@@ -213,8 +229,8 @@ components_running <- function(db, var, codebook, qtable) {
     return(df)
 }
 
+#' Check which components for an index are done
 #' @export
-# Check which components for an index are done
 components_done <- function(db, var, codebook, qtable) {
     deps <- rec_components(var, codebook)
     mmdeps <- subset(qtable, mm == TRUE)
@@ -235,11 +251,11 @@ components_done <- function(db, var, codebook, qtable) {
     return(df)
 }
 
+#' Check what mm jobs are running at what iteration on the hpc
 #' @export
-# Check what mm jobs are running at what iteration on the hpc
 mm_running <- function(db, codebook, qtable) {
 
-    running <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status != 'done';")
+    running <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'submit_mm' and status = 'done';")
     finished <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status = 'done';")
     running <- running %>% filter(!task_name %in% finished$task_name)
 
@@ -255,9 +271,8 @@ mm_running <- function(db, codebook, qtable) {
     return(df)
 }
 
+#' Check what mm jobs are done and additional convergence details
 #' @export
-# Check what mm jobs are done and additional convergence details
-
 mm_done <- function(db, codebook, qtable) {
 
     done <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_mm' and status = 'done';")
@@ -274,34 +289,80 @@ mm_done <- function(db, codebook, qtable) {
     return(df)
 }
 
+#' Check what bfa jobs are currnently running on the hpc
 #' @export
-# Check what bfa jobs are running on the hpc
-bfa_components_running <- function(db, var, codebook, qtable) {
-    # Define var dependencies
-    deps <- rec_components(var, codebook)
-    # Define mm dependencies
-    bfadeps <- subset(qtable, bfa == TRUE)
-    rundeps <- intersect(deps, bfadeps$name)
-
-    running <- DBI::dbGetQuery(db, sprintf(
-        "select * from tasks where module_name ~ 'status_bfa' and status = 'hpc_waiting' and task_name in (%s);", 
-        toString(sprintf("'%s'", rundeps))))
+bfa_running <- function(db) {
     
-    return(running)
+    running <- DBI::dbGetQuery(db, "select * from tasks where module_name = 'submit_bfa' and status = 'done';")
+    finished <- DBI::dbGetQuery(db, "select * from tasks where module_name = 'status_bfa' and status = 'done';")
+    running <- running %>% 
+        filter(!task_name %in% c(finished$task_name)) %>%
+        select(task_name, ts)
+
+    status_ids <- DBI::dbGetQuery(db, sprintf("select * from tasks where module_name = 'status_bfa' and task_name in (%s);", 
+        toString(sprintf("'%s'", running$task_name)))) %>%
+        select(task_name, task_id)
+
+    df <- left_join(running, status_ids, by = c("task_name")) %>%
+        rename(time_submitted = ts,
+            status_bfa_task_id = task_id)
+
+    return(df)
 }
 
+#' Check what bfa jobs haven't been run yet and the status of their dependencies
 #' @export
-# Check what bfa jobs haven't been run yet
-bfa_components_not_run <- function(db, var, codebook, qtable) {
-    # Define var dependencies
-    deps <- rec_components(var, codebook)
-    # Define mm dependencies
-    bfadeps <- subset(qtable, bfa == TRUE)
-    rundeps <- intersect(deps, bfadeps$name)
+bfa_not_run <- function(db) {
+
+    vars <- DBI::dbGetQuery(db, "select task_id, task_name, deps from tasks where module_name = 'submit_bfa' and status != 'done';")
+
+    info(sprintf("%s bfa jobs have not been run yet", nrow(vars)))
+
+    check_deps <- lapply(vars$task_name, function(x) {
+        deps <- DBI::dbGetQuery(db, sprintf("select * from tasks where module_name = 'prep_bfa' and task_name in (%s);", 
+            toString(sprintf("'%s'", x))))
+
+                deps <- unlist(strsplit(deps$deps, ","))
+                check_deps_status <- lapply(deps, function(dep) {
+                    DBI::dbGetQuery(db, sprintf("select task_name as dep, module_name as dep_module, status as dep_status from tasks where task_id = %s;", dep))
+                }) %>% bind_rows() %>%
+                mutate(bfa_waiting = x) %>% 
+                select(bfa_waiting, dep, dep_module, dep_status)
+        })
+
+    return(check_deps)
+}
+
+#' Check what bfa jobs are finished
+#' @export
+bfa_done <- function(db, var, codebook, qtable) {
+    done <- DBI::dbGetQuery(db, "select * from tasks where module_name ~ 'status_bfa' and status = 'done';")
     
-    running <- DBI::dbGetQuery(db, sprintf(
-        "select * from tasks where module_name ~ 'submit_bfa' and status != 'done' and task_name in (%s);", 
-        toString(sprintf("'%s'", rundeps))))
+    return(done)
+}
+
+#' Quickly look at status of all jobs running on the hpc
+#' @param hpc_alias The alias of the hpc to ssh into. Default is "tetralith"
+#' @param user The user on the hpc to check their jobs. Default is "x_linfo"
+#' @export
+hpc_status <- function(hpc_alias = "tetralith", user = "x_linfo") {
+    system_message <- sprintf("ssh %s \"squeue -u %s", hpc_alias, user)
+    system_message <- paste0(system_message, " --format='%.18i %.9P %.20j %.8u %.2t %.10M %.6D %R %e %'\"")
+
+    queue_df <-
+        system(system_message, intern = TRUE) %>%
+        strsplit(., " ") %>% lapply(function(v) {
+            v <- v[v != ""]
+            data.frame(
+                job_id =  v[1],
+                var = v[3],
+                user = v[4],
+                status = v[5],
+                runtime = v[6],
+                nnodes = v[7],
+                node = v[8],
+                endtime = v[9])
+    }) %>% bind_rows %>% .[-1, ]
     
-    return(running)
+    return(queue_df)
 }
